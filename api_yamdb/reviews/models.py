@@ -1,12 +1,25 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-from django.contrib.auth import get_user_model
 
-User = get_user_model()
+# Роли пользователей
+class UserRole(models.TextChoices):
+    USER = 'user', 'User'
+    MODERATOR = 'moderator', 'Moderator'
+    ADMIN = 'admin', 'Admin'
+
+
+# Пользователь
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
+
+    def __str__(self):
+        return self.username
 
 
 class Category(models.Model):
-    name = models.CharField('Имя категории')
+    name = models.CharField('Имя категории', max_length=64)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
@@ -19,7 +32,7 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField('Имя жанра')
+    name = models.CharField('Имя жанра', max_length=64)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
@@ -32,7 +45,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField('Название произведения')
+    name = models.CharField('Название произведения', max_length=128)
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',
@@ -120,7 +133,7 @@ class Comment(models.Model):
         'Дата добавления', auto_now_add=True, db_index=True)
 
     class Meta:
-        ordering = ('-pub_date')
+        ordering = ('-pub_date',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
