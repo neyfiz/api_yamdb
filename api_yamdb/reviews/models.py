@@ -94,6 +94,7 @@ class Review(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='reviews'
     )
+    score = models.IntegerField('Оценка', null=True, blank=True)
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
