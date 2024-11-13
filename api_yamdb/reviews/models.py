@@ -1,8 +1,30 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-from django.contrib.auth import get_user_model
 
-User = get_user_model()
+class UserRole(models.TextChoices):
+    USER = 'user', 'User'
+    MODERATOR = 'moderator', 'Moderator'
+    ADMIN = 'admin', 'Admin'
+
+
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='reviews_user_set',
+        blank=True
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='reviews_user_set',
+        blank=True
+    )
+
+    def __str__(self):
+        return self.username
 
 
 class Category(models.Model):
@@ -126,4 +148,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return self.author
+        return self.author.username

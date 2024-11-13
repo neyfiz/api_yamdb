@@ -4,6 +4,7 @@ from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin, ListModelMixin)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import views
 
 from reviews.models import Category, Genre, Review, Title
 
@@ -12,6 +13,18 @@ from .serializers import (
     GenreSerializer, ReviewSerializer,
     TitleReadSerializer, TitlePostSerializer
 )
+
+# допишу классы
+class SignUpView(views.APIView):
+    pass
+
+
+class TokenView(views.APIView):
+    pass
+
+
+class UserProfileView(views.APIView):
+    pass
 
 
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
