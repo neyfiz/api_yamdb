@@ -3,7 +3,7 @@ from django.db import models
 from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
 
 from django.contrib.auth.models import AbstractUser
-
+from django.db.models import Avg
 
 # Роли пользователей
 class UserRole(models.TextChoices):
@@ -98,6 +98,10 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
         ordering = ('name', 'year')
 
+    @property
+    def rating(self):
+        return self.rating_set.all().aggregate(Avg('score'))['score__avg']
+
     def __str__(self):
         return self.name
 
@@ -162,4 +166,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return self.author
+        return self.author.username
