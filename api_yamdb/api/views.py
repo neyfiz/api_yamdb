@@ -2,29 +2,70 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin, ListModelMixin)
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework import views
+from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
-from reviews.models import Category, Genre, Review, Title
+from reviews.models import (User, Category,
+                            Genre, Review, Title)
 
 from .serializers import (
-    CategorySerializer, CommentSerializer,
+    UserSerializer, CategorySerializer,
+    CommentSerializer,
     GenreSerializer, ReviewSerializer,
     TitleReadSerializer, TitlePostSerializer
 )
 
-# допишу классы
-class SignUpView(views.APIView):
-    pass
 
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    pagination_class = PageNumberPagination
 
-class TokenView(views.APIView):
-    pass
+    # Определяем доступы
+    def get_permissions(self):
+        if self.action in ['signup', 'token']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
+    def retrieve(self, request, *args, **kwargs):
+        username = kwargs.get('pk')
+        user = get_object_or_404(User, username=username)
+        if not user:
+            return Response({'detail': 'Пользователь не найден.'}, status=HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
 
-class UserProfileView(views.APIView):
-    pass
+    @action(detail=False, methods=['post'], url_path='auth/signup')
+    def signup(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=HTTP_200_OK)
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get', 'put', 'patch'], url_path='me')
+    def me(self, request):
+        user = request.user
+        if request.method in ['PUT', 'PATCH']:
+            serializer = self.get_serializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=HTTP_200_OK)
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='auth/token')
+    def token(self, request):
+        serializer = TokenObtainSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.validated_data, status=HTTP_200_OK)
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
