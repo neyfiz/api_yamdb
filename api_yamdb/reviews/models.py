@@ -1,27 +1,40 @@
 from django.db import models
+
+from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
+
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Avg
 
-
+# Роли пользователей
 class UserRole(models.TextChoices):
     USER = 'user', 'User'
     MODERATOR = 'moderator', 'Moderator'
     ADMIN = 'admin', 'Admin'
 
 
+# Пользователь
 class User(AbstractUser):
+
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
+    bio = models.TextField(blank=True, null=True)
 
     groups = models.ManyToManyField(
         'auth.Group',
-        related_name='reviews_user_set',
-        blank=True
+        related_name='custom_user_groups',
+        blank=True,
+        help_text=(
+            'Группы к которым принадлежит пользователь'
+            'Пользователь получит все разрешения к каждой из групп.'
+        ),
+        verbose_name='groups',
     )
     user_permissions = models.ManyToManyField(
         'auth.Permission',
-        related_name='reviews_user_set',
-        blank=True
+        related_name='custom_user_permissions',
+        blank=True,
+        help_text='Специальные разрешения для данного пользователя.',
+        verbose_name='права пользователя',
     )
 
     def __str__(self):
@@ -29,7 +42,7 @@ class User(AbstractUser):
 
 
 class Category(models.Model):
-    name = models.CharField('Имя категории', max_length=64)
+    name = models.CharField('Имя категории', max_length=MAX_LENGTH)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
@@ -42,8 +55,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField('Имя жанра', max_length=64)
-    slug = models.SlugField('Слаг', unique=True)
+    name = models.CharField('Имя жанра', max_length=MAX_LENGTH)
+    slug = models.SlugField('Слаг', max_length=MAX_LENGTH_SLUG, unique=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -55,7 +68,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField('Название произведения', max_length=64)
+    name = models.CharField('Название произведения', max_length=MAX_LENGTH)
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',
