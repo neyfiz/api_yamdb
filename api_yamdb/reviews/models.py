@@ -1,12 +1,13 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 
-from django.contrib.auth import get_user_model
+from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
 
 User = get_user_model()
 
 
 class Category(models.Model):
-    name = models.CharField('Имя категории', max_length=64)
+    name = models.CharField('Имя категории', max_length=MAX_LENGTH)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
@@ -19,8 +20,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField('Имя жанра', max_length=64)
-    slug = models.SlugField('Слаг', unique=True)
+    name = models.CharField('Имя жанра', max_length=MAX_LENGTH)
+    slug = models.SlugField('Слаг', max_length=MAX_LENGTH_SLUG, unique=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -32,7 +33,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField('Название произведения', max_length=64)
+    name = models.CharField('Название произведения', max_length=MAX_LENGTH)
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',
