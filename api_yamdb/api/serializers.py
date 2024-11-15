@@ -1,6 +1,6 @@
 from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
 from reviews.models import Category, Comment, Review, Genre, Title
 
@@ -20,6 +20,9 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
+    rating = SerializerMethodField(
+        read_only=True, default=None
+    )
 
     class Meta:
         model = Title
