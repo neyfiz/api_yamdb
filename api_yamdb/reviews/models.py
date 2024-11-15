@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models import Avg
 
 
 class UserRole(models.TextChoices):
@@ -83,6 +84,10 @@ class Title(models.Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('name', 'year')
+
+    @property
+    def rating(self):
+        return self.rating_set.all().aggregate(Avg('score'))['score__avg']
 
     def __str__(self):
         return self.name
