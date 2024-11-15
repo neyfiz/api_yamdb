@@ -8,19 +8,23 @@ from .views import (
 
 app_name = 'api'
 
-router_v1 = DefaultRouter()
+v1_router = DefaultRouter()
 
-router_v1.register('titles', TitleViewSet, basename='title')
-router_v1.register('genres', GenreViewSet, basename='category')
-router_v1.register('categories', CategoryViewSet, basename='category')
-router_v1.register(
+v1_router.register('titles', TitleViewSet, basename='title')
+v1_router.register('genres', GenreViewSet, basename='category')
+v1_router.register('categories', CategoryViewSet, basename='category')
+v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet, basename='comment'
 )
-router_v1.register(
+v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='review'
 )
 
+v1_urlpatterns = [
+    path('', include(v1_router.urls)),
+]
+
 urlpatterns = [
-    path('', include(router_v1.urls)),
+    path('v1/', include(v1_urlpatterns)),
 ]
