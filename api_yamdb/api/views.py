@@ -6,13 +6,13 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import views
 
-from reviews.models import Category, Genre, Review, Title
-
 from .serializers import (
     CategorySerializer, CommentSerializer,
     GenreSerializer, ReviewSerializer,
     TitleReadSerializer, TitlePostSerializer
 )
+from reviews.models import Category, Genre, Review, Title
+
 
 # допишу классы
 class SignUpView(views.APIView):

@@ -1,8 +1,7 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
-
-from django.contrib.auth.models import AbstractUser
 
 
 # Роли пользователей
