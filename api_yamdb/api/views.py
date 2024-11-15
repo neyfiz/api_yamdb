@@ -1,18 +1,29 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework.mixins import (CreateModelMixin,
-                                   DestroyModelMixin, ListModelMixin)
+from rest_framework.mixins import (
+    CreateModelMixin,
+    RetrieveModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+)
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.pagination import PageNumberPagination
-from rest_framework import views
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 
-from reviews.models import Category, Genre, Review, Title
+from rest_framework import views, status
+from reviews.models import Category, Genre, Review, Title, Comment
 
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     CategorySerializer, CommentSerializer,
     GenreSerializer, ReviewSerializer,
     TitleReadSerializer, TitlePostSerializer
 )
+
 
 # допишу классы
 class SignUpView(views.APIView):
@@ -57,6 +68,8 @@ class TitleViewSet(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = PageNumberPagination
+    permission_classes = (IsAuthorOrReadOnly,
+                          IsAuthenticatedOrReadOnly)
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -70,9 +83,17 @@ class ReviewViewSet(ModelViewSet):
         return title.reviews.all()
 
 
-class CommentViewSet(ModelViewSet):
+class CommentViewSet(
+    CreateModelMixin,
+    RetrieveModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    GenericViewSet
+):
     serializer_class = CommentSerializer
     pagination_class = PageNumberPagination
+    permission_classes = (IsAuthorOrReadOnly,
+                          IsAuthenticatedOrReadOnly)
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')

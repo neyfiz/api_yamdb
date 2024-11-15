@@ -5,6 +5,7 @@ from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Avg
 
+
 # Роли пользователей
 class UserRole(models.TextChoices):
     USER = 'user', 'User'
