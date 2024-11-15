@@ -1,9 +1,44 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
 
-User = get_user_model()
+from django.contrib.auth.models import AbstractUser
+
+
+# Роли пользователей
+class UserRole(models.TextChoices):
+    USER = 'user', 'User'
+    MODERATOR = 'moderator', 'Moderator'
+    ADMIN = 'admin', 'Admin'
+
+
+# Пользователь
+class User(AbstractUser):
+
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
+    bio = models.TextField(blank=True, null=True)
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='custom_user_groups',
+        blank=True,
+        help_text=(
+            'Группы к которым принадлежит пользователь'
+            'Пользователь получит все разрешения к каждой из групп.'
+        ),
+        verbose_name='groups',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='custom_user_permissions',
+        blank=True,
+        help_text='Специальные разрешения для данного пользователя.',
+        verbose_name='права пользователя',
+    )
+
+    def __str__(self):
+        return self.username
 
 
 class Category(models.Model):
