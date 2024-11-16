@@ -1,9 +1,13 @@
+import random
+from http import HTTPStatus
+
+from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin, ListModelMixin)
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -12,6 +16,7 @@ from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
 from reviews.models import (User, Category,
                             Genre, Review, Title)
+from .permissions import IsAdmin
 
 from .serializers import (
     UserSerializer, CategorySerializer,
@@ -25,47 +30,106 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = PageNumberPagination
+    filter_backends = (SearchFilter,)
+    search_fields = ('username',)
+    permission_classes = [IsAuthenticated]
 
     # Определяем доступы
     def get_permissions(self):
         if self.action in ['signup', 'token']:
             return [AllowAny()]
-        return [IsAuthenticated()]
+
+        elif self.action in ['list', 'retrieve',
+                             'destroy', 'update',
+                             'partial_update']:
+            return [IsAdmin()]
+        return super().get_permissions()
 
     def retrieve(self, request, *args, **kwargs):
         username = kwargs.get('pk')
         user = get_object_or_404(User, username=username)
         if not user:
-            return Response({'detail': 'Пользователь не найден.'}, status=HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Пользователь не найден.'},
+                            status=HTTPStatus.BAD_REQUEST)
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='auth/signup')
     def signup(self, request):
+
+        username = request.data.get('username')
+        email = request.data.get('email')
+
+        if username == 'me':
+            return Response(
+                {'username': 'Этот никнейм нельзя использовать'},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        if User.objects.filter(username=username).exists():
+            existing_user = User.objects.get(username=username)
+
+            if existing_user.email != email:
+                return Response(
+                    {'email': 'Email не совпадает с уже зарегистрированным пользователем.'},
+                    status=HTTPStatus.BAD_REQUEST
+                )
+            return Response(
+                {'username': existing_user.username,
+                 'email': existing_user.email},
+                status=HTTPStatus.OK
+            )
+
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=HTTP_200_OK)
-        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+            user = serializer.save()
+            response_data = {
+                'username': user.username,
+                'email': user.email
+            }
+
+            confirmation_code = random.randint(100000, 999999)
+
+            send_mail(
+                subject='Код подтверждения',
+                message=f'Ваш код подтверждения: {confirmation_code}',
+                from_email='noreply@yamdb.fake',
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+            request.session['confirmation_code'] = confirmation_code
+
+            return Response(response_data, status=HTTPStatus.OK)
+        return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'put', 'patch'], url_path='me')
     def me(self, request):
         user = request.user
+
         if request.method in ['PUT', 'PATCH']:
-            serializer = self.get_serializer(user, data=request.data, partial=True)
+            serializer = self.get_serializer(user, data=request.data,
+                                             partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=HTTP_200_OK)
-            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+                return Response(serializer.data, status=HTTPStatus.OK)
+            return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='auth/token')
     def token(self, request):
+        username = request.data.get('username')
+        if not username:
+            return Response({'detail': 'Укажите никнейм.'},
+                            status=HTTPStatus.BAD_REQUEST)
+
+
+        user = get_object_or_404(User, username=username)
+
         serializer = TokenObtainSerializer(data=request.data)
         if serializer.is_valid():
-            return Response(serializer.validated_data, status=HTTP_200_OK)
-        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+            return Response(serializer.validated_data, status=HTTPStatus.OK)
+        return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
 
 
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
