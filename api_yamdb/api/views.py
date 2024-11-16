@@ -1,8 +1,16 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework.mixins import (CreateModelMixin,
-                                   DestroyModelMixin, ListModelMixin)
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    RetrieveModelMixin,
+    ListModelMixin
+)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.decorators import action

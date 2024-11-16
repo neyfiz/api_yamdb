@@ -57,9 +57,10 @@ class TitleReadSerializer(ModelSerializer):
 
     class Meta:
         model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category',
-        )
+        fields = '__all__'
+
+    def get_rating(self, obj):
+        return obj.rating
 
 
 class TitlePostSerializer(ModelSerializer):
