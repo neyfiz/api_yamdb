@@ -1,8 +1,39 @@
+import re
+
 from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
-from reviews.models import Category, Comment, Review, Genre, Title
+from reviews.models import (User, Category,
+                            Comment, Review,
+                            Genre, Title)
+
+
+class UserSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio', 'role']
+
+    # def create(self, validated_data):
+    #     user = User.objects.create_user(
+    #         username=validated_data['username'],
+    #         email=validated_data['email'],
+    #         password=validated_data['password'],
+    #         first_name=validated_data.get('first_name', ''),
+    #         last_name=validated_data.get('last_name', ''),
+    #     )
+    #     return user
+
+    # def update(self, instance, validated_data):
+    #     if 'password' in validated_data:
+    #         instance.set_password(validated_data.pop('password'))
+    #         return super().update(instance, validated_data)
+    #
+    # def validate_username(self, value):
+    #     if not re.match(r'^[\w.@+-]+Z', value):
+    #         raise ValidationError('Имя пользователя содержит пробелы или недопустимые символы')
+    #
+    #     return value
 
 
 class CategorySerializer(ModelSerializer):
@@ -20,6 +51,9 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
+    rating = SerializerMethodField(
+        read_only=True, default=None
+    )
 
     class Meta:
         model = Title

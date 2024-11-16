@@ -16,7 +16,7 @@ class UserRole(models.TextChoices):
 # Пользователь
 class User(AbstractUser):
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(max_length=254, unique=True)
     role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
     bio = models.TextField(blank=True, null=True)
 
