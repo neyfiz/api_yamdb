@@ -60,6 +60,8 @@ class UserViewSet(ModelViewSet):
         username = request.data.get('username')
         email = request.data.get('email')
 
+        print(f'{username}')
+
         if username == 'me':
             return Response(
                 {'username': 'Этот никнейм нельзя использовать'},
@@ -69,18 +71,23 @@ class UserViewSet(ModelViewSet):
         if User.objects.filter(username=username).exists():
             existing_user = User.objects.get(username=username)
 
-            if existing_user.email != email:
+            if existing_user.email == email:
+                confirmation_code = random.randint(100000, 999999)
+                request.session['confirmation_code'] = confirmation_code
+
+
                 return Response(
-                    {'email': 'Email не совпадает с уже зарегистрированным пользователем.'},
-                    status=HTTPStatus.BAD_REQUEST
+                    {'username': existing_user.username, 'email': existing_user.email},
+                    status=HTTPStatus.OK
                 )
+
             return Response(
-                {'username': existing_user.username,
-                 'email': existing_user.email},
-                status=HTTPStatus.OK
+                {'email': 'Email не совпадает с уже зарегистрированным пользователем.'},
+                status=HTTPStatus.BAD_REQUEST
             )
 
         serializer = self.get_serializer(data=request.data)
+
         if serializer.is_valid():
             user = serializer.save()
             response_data = {
@@ -98,9 +105,11 @@ class UserViewSet(ModelViewSet):
                 fail_silently=False,
             )
             request.session['confirmation_code'] = confirmation_code
-            print(f'Сохранённый код: {confirmation_code}')
+
+            print(f'Сохранённый код для нового пользователя: {username} - {confirmation_code}')
 
             return Response(response_data, status=HTTPStatus.OK)
+
         return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'put', 'patch'], url_path='me')

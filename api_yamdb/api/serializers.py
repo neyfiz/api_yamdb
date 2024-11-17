@@ -27,7 +27,7 @@ class UserSerializer(ModelSerializer):
         fields = ['username', 'email', 'role', 'first_name', 'last_name', 'bio']
 
     def validate_username(self, value):
-        if value == 'me':
+        if value.lower() == 'me':
             raise ValidationError("Этот никнейм нельзя использовать")
         if User.objects.filter(username=value).exists():
             raise ValidationError("Имя пользователя уже существует")
@@ -54,9 +54,6 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
-    rating = SerializerMethodField(
-        read_only=True, default=None
-    )
 
     class Meta:
         model = Title
