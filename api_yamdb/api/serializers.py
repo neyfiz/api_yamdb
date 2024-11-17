@@ -61,9 +61,6 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
-    rating = SerializerMethodField(
-        read_only=True, default=None
-    )
 
     class Meta:
         model = Title
