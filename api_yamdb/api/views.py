@@ -83,6 +83,7 @@ class UserViewSet(ModelViewSet):
                 confirmation_code = random.randint(100000, 999999)
                 request.session['confirmation_code'] = confirmation_code
 
+                print(f'Код для уже созданого пользователя {confirmation_code}')
 
                 return Response(
                     {'username': existing_user.username, 'email': existing_user.email},
