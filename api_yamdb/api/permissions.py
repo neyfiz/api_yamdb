@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from rest_framework import permissions
 
 from reviews.models import UserRole
 
@@ -34,3 +35,11 @@ class IsAdminOrModerator(BasePermission):
         if not request.user.is_authenticated:
             return False
         return request.user.role in [UserRole.ADMIN, UserRole.MODERATOR]
+
+
+class IsAuthorOrReadOnly(BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return True
+        return obj.author == request.user

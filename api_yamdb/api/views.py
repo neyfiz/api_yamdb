@@ -1,13 +1,23 @@
 import random
 from http import HTTPStatus
 
+from rest_framework.exceptions import MethodNotAllowed
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin,
-                                   DestroyModelMixin, ListModelMixin)
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+)
+from rest_framework import status
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -19,6 +29,7 @@ from reviews.models import (User, Category,
                             Genre, Review, Title)
 from .permissions import IsAdmin
 
+from .permissions import IsAuthorOrReadOnly, IsAdminOrModerator
 from .serializers import (
     UserSerializer, CategorySerializer,
     CommentSerializer,
@@ -185,6 +196,8 @@ class TitleViewSet(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = PageNumberPagination
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -201,6 +214,8 @@ class ReviewViewSet(ModelViewSet):
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
     pagination_class = PageNumberPagination
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
