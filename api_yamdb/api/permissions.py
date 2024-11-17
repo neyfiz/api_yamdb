@@ -9,14 +9,18 @@ class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
-        return request.user.role == UserRole.ADMIN
+
+        return request.user.is_authenticated and (request.user.is_staff or
+                                                  request.user.is_superuser or
+                                                  request.user.role == UserRole.ADMIN)
 
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False
-        return obj == request.user.role == UserRole.ADMIN
+        return self.has_permission(request, view)
 
 
+# тут еще переписать для себя и модератора
 class IsSelfOrAdmin(BasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -33,15 +37,9 @@ class IsAdminOrModerator(BasePermission):
         return request.user.role in [UserRole.ADMIN, UserRole.MODERATOR]
 
 
-class IsAuthorOrReadOnly(permissions.BasePermission):
+class IsAuthorOrReadOnly(BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        # Разрешаем только для методов GET, HEAD, OPTIONS (для чтения)
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
             return True
-        
-        # Запрещаем PUT и PATCH запросы для всех пользователей, кроме автора
-        if request.method in ['PUT', 'PATCH']:
-            return obj.author == request.user
-        
-        return False
+        return obj.author == request.user

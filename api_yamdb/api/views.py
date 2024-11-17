@@ -22,13 +22,14 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework_simplejwt.serializers import TokenObtainSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 from reviews.models import (User, Category,
                             Genre, Review, Title)
 from .permissions import IsAdmin
 
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly, IsAdminOrModerator
 from .serializers import (
     UserSerializer, CategorySerializer,
     CommentSerializer,
@@ -47,6 +48,8 @@ class UserViewSet(ModelViewSet):
 
     # Определяем доступы
     def get_permissions(self):
+        print(f'Action: {self.action}')
+
         if self.action in ['signup', 'token']:
             return [AllowAny()]
 
@@ -59,9 +62,6 @@ class UserViewSet(ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         username = kwargs.get('pk')
         user = get_object_or_404(User, username=username)
-        if not user:
-            return Response({'detail': 'Пользователь не найден.'},
-                            status=HTTPStatus.BAD_REQUEST)
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
@@ -109,6 +109,7 @@ class UserViewSet(ModelViewSet):
                 fail_silently=False,
             )
             request.session['confirmation_code'] = confirmation_code
+            print(f'Сохранённый код: {confirmation_code}')
 
             return Response(response_data, status=HTTPStatus.OK)
         return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
@@ -130,17 +131,39 @@ class UserViewSet(ModelViewSet):
     @action(detail=False, methods=['post'], url_path='auth/token')
     def token(self, request):
         username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
+
         if not username:
             return Response({'detail': 'Укажите никнейм.'},
                             status=HTTPStatus.BAD_REQUEST)
-
+        if not confirmation_code:
+            return Response({'detail': 'Укажите код подтверждения.'},
+                            status=HTTPStatus.BAD_REQUEST)
 
         user = get_object_or_404(User, username=username)
 
-        serializer = TokenObtainSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.validated_data, status=HTTPStatus.OK)
-        return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
+        stored_code = request.session.get('confirmation_code')
+        print(f'Извлеченный код из сессии: {stored_code}')
+
+        # тут уязвимость, AllowAny in signup, token код выдаеться из последней сессии,
+        # можно создать админа от юзера с этим же кодом, в теории
+
+        if not stored_code:
+            return Response({'detail': 'Код подтверждения не найден, укажите его заново.'},
+                            status=HTTPStatus.BAD_REQUEST)
+
+        if str(confirmation_code) != str(stored_code):
+            return Response({'detail': 'Неверный код подтверждения.'},
+                            status=HTTPStatus.BAD_REQUEST)
+
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'token': str(refresh.access_token),
+            },
+        status=HTTPStatus.OK
+        )
 
 
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
@@ -173,8 +196,8 @@ class TitleViewSet(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = PageNumberPagination
-    permission_classes = (IsAuthorOrReadOnly,
-                          IsAuthenticatedOrReadOnly)
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -191,7 +214,8 @@ class ReviewViewSet(ModelViewSet):
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
     pagination_class = PageNumberPagination
-    permission_classes = [IsAuthorOrReadOnly, IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
@@ -204,15 +228,3 @@ class CommentViewSet(ModelViewSet):
     def get_queryset(self):
         review = self.get_review()
         return review.comments.all()
-    
-    def update(self, request, *args, **kwargs):
-        return Response(
-            {'detail': 'PUT method not allowed.'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-        return Response(
-            {'detail': 'PATCH method not allowed.'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
