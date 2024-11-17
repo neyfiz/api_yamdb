@@ -102,6 +102,7 @@ class Title(models.Model):
     def __str__(self):
         return self.name
 
+
 class GenreTitle(models.Model):
     title = models.ForeignKey(
         Title,
@@ -130,7 +131,7 @@ class Review(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='reviews'
     )
-    score = models.IntegerField(verbose_name="Оценка")
+    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
