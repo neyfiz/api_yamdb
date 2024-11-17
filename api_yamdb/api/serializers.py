@@ -1,3 +1,5 @@
+from django.core.validators import RegexValidator
+from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
@@ -8,30 +10,21 @@ from reviews.models import (User, Category,
 
 
 class UserSerializer(ModelSerializer):
+    username = serializers.CharField(
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message=
+                'Имя пользователя может содержать только буквы,'
+                ' цифры и символы: @/./+/-/_'
+            )
+        ]
+    )
+
     class Meta:
         model = User
         fields = ['username', 'email', 'role', 'first_name', 'last_name', 'bio']
-
-    # def create(self, validated_data):
-    #     user = User.objects.create_user(
-    #         username=validated_data['username'],
-    #         email=validated_data['email'],
-    #         password=validated_data['password'],
-    #         first_name=validated_data.get('first_name', ''),
-    #         last_name=validated_data.get('last_name', ''),
-    #     )
-    #     return user
-
-    # def update(self, instance, validated_data):
-    #     if 'password' in validated_data:
-    #         instance.set_password(validated_data.pop('password'))
-    #         return super().update(instance, validated_data)
-    #
-    # def validate_username(self, value):
-    #     if not re.match(r'^[\w.@+-]+Z', value):
-    #         raise ValidationError('Имя пользователя содержит пробелы или недопустимые символы')
-    #
-    #     return value
 
     def validate_username(self, value):
         if value == 'me':
