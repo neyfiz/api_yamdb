@@ -15,16 +15,16 @@ class UserSerializer(ModelSerializer):
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+\Z',
-                message=
-                'Имя пользователя может содержать только буквы,'
-                ' цифры и символы: @/./+/-/_'
+                message='Имя пользователя может содержать только буквы,'
+                        ' цифры и символы: @/./+/-/_'
             )
         ]
     )
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'role', 'first_name', 'last_name', 'bio']
+        fields = [
+            'username', 'email', 'role', 'first_name', 'last_name', 'bio']
 
     def validate_username(self, value):
         if value.lower() == 'me':
@@ -52,10 +52,12 @@ class GenreSerializer(ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'description', 'year', 'rating', 'category', 'genre']
 
 
 class TitlePostSerializer(ModelSerializer):
@@ -87,6 +89,11 @@ class ReviewSerializer(ModelSerializer):
                 raise ValidationError(
                     'Можно создать только 1 отзыв на 1 произведение'
                 )
+            score = data.get('score')
+            if score is not None:
+                if score < 1 or score > 10:
+                    raise ValidationError('Оценка должна быть от 1 до 10.')
+
         return data
 
 

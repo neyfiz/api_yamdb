@@ -1,7 +1,5 @@
 from django.db import models
-
 from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
-
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Avg
 
@@ -15,7 +13,6 @@ class UserRole(models.TextChoices):
 
 # Пользователь
 class User(AbstractUser):
-
     email = models.EmailField(max_length=254, unique=True)
     role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
     bio = models.TextField(blank=True, null=True)
@@ -25,17 +22,17 @@ class User(AbstractUser):
         related_name='custom_user_groups',
         blank=True,
         help_text=(
-            'Группы к которым принадлежит пользователь'
-            'Пользователь получит все разрешения к каждой из групп.'
+            'Группы, к которым принадлежит пользователь. '
+            'Пользователь получит все разрешения каждой из групп.'
         ),
-        verbose_name='groups',
+        verbose_name='Группы',
     )
     user_permissions = models.ManyToManyField(
         'auth.Permission',
         related_name='custom_user_permissions',
         blank=True,
         help_text='Специальные разрешения для данного пользователя.',
-        verbose_name='права пользователя',
+        verbose_name='Права пользователя',
     )
 
     class Meta:
@@ -72,7 +69,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField('Название произведения', max_length=MAX_LENGTH)
+    name = models.CharField('Название произведения', max_length=255)
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',
@@ -102,10 +99,8 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
         ordering = ('name', 'year')
 
-
     def __str__(self):
         return self.name
-
 
 class GenreTitle(models.Model):
     title = models.ForeignKey(
@@ -135,21 +130,14 @@ class Review(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='reviews'
     )
-    score = models.IntegerField('Оценка', null=True, blank=True)
+    score = models.IntegerField(verbose_name="Оценка")
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
-        constraints = (
-            models.UniqueConstraint(
-                fields=('author', 'title'), name='unique_author_title'
-            ),
-        )
-        ordering = ('-pub_date',)
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'
+        unique_together = ('title', 'author')
 
     def __str__(self):
-        return self.text
+        return f'Review by {self.author} on {self.title}'
 
 
 class Comment(models.Model):
@@ -167,4 +155,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return f"Отзыв от {self.author.username} к {self.title.name}"
+        return f"Комментарий от {self.author.username} к отзыву на {self.review.title.name}"
