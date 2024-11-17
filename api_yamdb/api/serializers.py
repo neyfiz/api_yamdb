@@ -27,7 +27,7 @@ class UserSerializer(ModelSerializer):
         fields = ['username', 'email', 'role', 'first_name', 'last_name', 'bio']
 
     def validate_username(self, value):
-        if value == 'me':
+        if value.lower() == 'me':
             raise ValidationError("Этот никнейм нельзя использовать")
         if User.objects.filter(username=value).exists():
             raise ValidationError("Имя пользователя уже существует")
