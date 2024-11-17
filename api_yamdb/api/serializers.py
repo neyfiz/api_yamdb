@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer
 
 from reviews.models import (User, Category,
                             Comment, Review,
@@ -51,16 +51,11 @@ class GenreSerializer(ModelSerializer):
         fields = ('name', 'slug')
 
 
-class TitleReadSerializer(ModelSerializer):
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer(many=False)
+class TitleReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
         fields = '__all__'
-
-    def get_rating(self, obj):
-        return obj.rating
 
 
 class TitlePostSerializer(ModelSerializer):
@@ -74,9 +69,6 @@ class TitlePostSerializer(ModelSerializer):
     class Meta:
         model = Title
         fields = '__all__'
-
-    def to_representation(self, value):
-        return TitleReadSerializer(value).data
 
 
 class ReviewSerializer(ModelSerializer):

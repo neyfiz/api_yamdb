@@ -102,9 +102,6 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
         ordering = ('name', 'year')
 
-    @property
-    def rating(self):
-        return self.reviews.aggregate(Avg('score'))['score__avg']
 
     def __str__(self):
         return self.name
@@ -170,4 +167,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return self.author.username
+        return f"Отзыв от {self.author.username} к {self.title.name}"
