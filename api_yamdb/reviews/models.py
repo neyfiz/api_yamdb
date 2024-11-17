@@ -38,6 +38,9 @@ class User(AbstractUser):
         verbose_name='права пользователя',
     )
 
+    class Meta:
+        ordering = ['id']
+
     def __str__(self):
         return self.username
 
@@ -101,7 +104,7 @@ class Title(models.Model):
 
     @property
     def rating(self):
-        return self.rating_set.all().aggregate(Avg('score'))['score__avg']
+        return self.reviews.aggregate(Avg('score'))['score__avg']
 
     def __str__(self):
         return self.name
