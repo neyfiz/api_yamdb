@@ -1,7 +1,6 @@
 import random
 from http import HTTPStatus
 
-from rest_framework.exceptions import MethodNotAllowed
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -10,9 +9,7 @@ from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin,
-    RetrieveModelMixin,
 )
-from rest_framework import status
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -29,7 +26,7 @@ from reviews.models import (User, Category,
                             Genre, Review, Title)
 from .permissions import IsAdmin
 
-from .permissions import IsAuthorOrReadOnly, IsAdminOrModerator
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     UserSerializer, CategorySerializer,
     CommentSerializer,
