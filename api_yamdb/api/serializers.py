@@ -1,5 +1,3 @@
-import re
-
 from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
@@ -12,7 +10,7 @@ from reviews.models import (User, Category,
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'bio', 'role']
+        fields = ['username', 'email', 'role', 'first_name', 'last_name', 'bio']
 
     # def create(self, validated_data):
     #     user = User.objects.create_user(
@@ -34,6 +32,18 @@ class UserSerializer(ModelSerializer):
     #         raise ValidationError('Имя пользователя содержит пробелы или недопустимые символы')
     #
     #     return value
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise ValidationError("Этот никнейм нельзя использовать")
+        if User.objects.filter(username=value).exists():
+            raise ValidationError("Имя пользователя уже существует")
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise ValidationError("Пользователь с данным email уже существует")
+        return value
 
 
 class CategorySerializer(ModelSerializer):
