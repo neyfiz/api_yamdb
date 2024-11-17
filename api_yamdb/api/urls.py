@@ -27,6 +27,10 @@ v1_urlpatterns = [
 
 urlpatterns = [
     path('v1/', include(v1_urlpatterns)),
-    path('v1/auth/signup/', UserViewSet.as_view({'post': 'signup'}), name='signup'),
-    path('v1/auth/token/', UserViewSet.as_view({'post': 'token'}), name='token_obtain_pair'),
+    path('v1/auth/signup/',
+         UserViewSet.as_view({'post': 'signup'}),
+         name='signup'),
+    path('v1/auth/token/',
+         UserViewSet.as_view({'post': 'token'}),
+         name='token_obtain_pair'),
 ]

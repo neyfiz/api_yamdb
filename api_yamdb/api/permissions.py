@@ -1,6 +1,4 @@
-from rest_framework.permissions import BasePermission
-from rest_framework import permissions
-
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 from reviews.models import UserRole
 
 
@@ -10,9 +8,10 @@ class IsAdmin(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        return request.user.is_authenticated and (request.user.is_staff or
-                                                  request.user.is_superuser or
-                                                  request.user.role == UserRole.ADMIN)
+        return request.user.is_authenticated and (
+            request.user.is_staff
+            or request.user.is_superuser
+            or request.user.role == UserRole.ADMIN)
 
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
@@ -40,6 +39,7 @@ class IsAdminOrModerator(BasePermission):
 class IsAuthorOrReadOnly(BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return True
-        return obj.author == request.user
+        return (
+            request.method in SAFE_METHODS
+            or obj.author == request.user
+        )

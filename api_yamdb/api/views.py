@@ -21,17 +21,16 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
-from reviews.models import (User, Category,
-                            Genre, Review, Title)
-from .permissions import IsAdmin
-
-from .permissions import IsAuthorOrReadOnly
+from reviews.models import User, Category, Genre, Review, Title
+from .permissions import IsAdmin, IsAuthorOrReadOnly
 from .serializers import (
-    UserSerializer, CategorySerializer,
+    UserSerializer,
+    CategorySerializer,
     CommentSerializer,
-    GenreSerializer, ReviewSerializer,
-    TitleReadSerializer, TitlePostSerializer
+    GenreSerializer,
+    ReviewSerializer,
+    TitleReadSerializer,
+    TitlePostSerializer,
 )
 
 
@@ -189,6 +188,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
@@ -211,11 +211,12 @@ class ReviewViewSet(ModelViewSet):
         return get_object_or_404(Title, id=title_id)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, title=self.get_title())
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
 
     def get_queryset(self):
         title = self.get_title()
-        return title.reviews.all()
+        return title.reviews.all().order_by('pub_date')
 
 
 class CommentViewSet(ModelViewSet):
@@ -230,7 +231,8 @@ class CommentViewSet(ModelViewSet):
         return get_object_or_404(Review, id=review_id, title__id=title_id)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
+        review = self.get_review()
+        serializer.save(author=self.request.user, review=review)
 
     def get_queryset(self):
         review = self.get_review()
