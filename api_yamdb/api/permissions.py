@@ -2,42 +2,28 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 from reviews.models import UserRole
 
 
-class IsAdmin(BasePermission):
-
+class IsAdminOrAuthenticated(BasePermission):
+    """Разрешение для администраторов и аутентифицированных пользователей."""
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-
         return request.user.is_authenticated and (
             request.user.is_staff
             or request.user.is_superuser
-            or request.user.role == UserRole.ADMIN)
-
-    def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
-            return False
-        return self.has_permission(request, view)
+            or request.user.role == UserRole.ADMIN
+        )
 
 
-# тут еще переписать для себя и модератора
-class IsSelfOrAdmin(BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
-            return False
-        return obj == request.user or request.user.role == UserRole.ADMIN
-
-
-class IsAdminOrModerator(BasePermission):
-
+class IsAdminOnly(BasePermission):
+    """Разрешение, доступное только администраторам."""
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        return request.user.role in [UserRole.ADMIN, UserRole.MODERATOR]
+        if request.method in SAFE_METHODS:
+            return True
+        return request.user.is_authenticated and (
+            request.user.role == UserRole.ADMIN
+        )
 
 
 class IsAuthorOrReadOnly(BasePermission):
-
+    """Разрешение для автора объекта или только для чтения."""
     def has_object_permission(self, request, view, obj):
         return (
             request.method in SAFE_METHODS
@@ -46,15 +32,11 @@ class IsAuthorOrReadOnly(BasePermission):
 
 
 class IsAdminModeratorAuthorOrReadOnly(BasePermission):
+    """Разрешение для админа, модератора, автора или только для чтения."""
     def has_permission(self, request, view):
-        # Проверяем права для неавторизованных пользователей
-        if not request.user.is_authenticated:
-            return request.method in SAFE_METHODS
-        # Проверяем права для авторизованных пользователей
-        return True
+        return request.method in SAFE_METHODS or request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        # Только безопасные методы или автор/админ/модератор
         return (
             request.method in SAFE_METHODS
             or request.user.role in [UserRole.ADMIN, UserRole.MODERATOR]

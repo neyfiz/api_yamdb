@@ -22,7 +22,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Category, Genre, Review, Title
-from .permissions import IsAdmin, IsAuthorOrReadOnly, IsSelfOrAdmin, IsAdminOrModerator, IsAdminModeratorAuthorOrReadOnly
+from .permissions import (
+    IsAdminOrAuthenticated,
+    IsAuthorOrReadOnly,
+    IsAdminModeratorAuthorOrReadOnly,
+    IsAdminOnly,
+)
 from .serializers import (
     UserSerializer,
     CategorySerializer,
@@ -52,7 +57,7 @@ class UserViewSet(ModelViewSet):
         elif self.action in ['list', 'retrieve',
                              'destroy', 'update',
                              'partial_update']:
-            return [IsAdmin()]
+            return [IsAdminOrAuthenticated()]
         return super().get_permissions()
 
     def retrieve(self, request, *args, **kwargs):
@@ -189,7 +194,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
