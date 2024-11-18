@@ -26,6 +26,11 @@ class UserSerializer(ModelSerializer):
         fields = [
             'username', 'email', 'role', 'first_name', 'last_name', 'bio']
 
+    def validate_role(self, value):
+        if value not in UserRole.values:
+            raise serializers.ValidationError('Недопустимая роль.')
+        return value
+
     def validate_username(self, value):
         if value.lower() == 'me':
             raise ValidationError("Этот никнейм нельзя использовать")
