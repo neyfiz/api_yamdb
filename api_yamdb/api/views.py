@@ -1,11 +1,9 @@
 import random
-from functools import partial
 from http import HTTPStatus
 
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
@@ -85,9 +83,6 @@ class UserViewSet(ModelViewSet):
         user = get_object_or_404(User, username=username)
 
         data = request.data.copy()
-        if 'role' in data:
-            data.pop('role')
-
 
         serializer = self.get_serializer(user, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
