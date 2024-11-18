@@ -1,9 +1,11 @@
 import random
+from functools import partial
 from http import HTTPStatus
 
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
@@ -55,16 +57,42 @@ class UserViewSet(ModelViewSet):
             return [AllowAny()]
 
         elif self.action in ['list', 'retrieve',
-                             'destroy', 'update',
-                             'partial_update']:
+                             'destroy', 'partial_update']:
             return [IsAdminOrAuthenticated()]
         return super().get_permissions()
 
+    # GET получить один обьект по pk
     def retrieve(self, request, *args, **kwargs):
         username = kwargs.get('pk')
         user = get_object_or_404(User, username=username)
         serializer = self.get_serializer(user)
         return Response(serializer.data)
+
+    # PUT
+    def update(self, request, *args, **kwargs):
+        return Response({'detail: Метод PUT не разрешён.'}, status=HTTPStatus.METHOD_NOT_ALLOWED)
+
+    # DELETE
+    def destroy(self, request, *args, **kwargs):
+        username = kwargs.get('pk')
+        user = get_object_or_404(User, username=username)
+        user.delete()
+        return Response(status=HTTPStatus.NO_CONTENT)
+
+    # PATCH
+    def partial_update(self, request, *args, **kwargs):
+        username = kwargs.get('pk')
+        user = get_object_or_404(User, username=username)
+
+        data = request.data.copy()
+        if 'role' in data:
+            data.pop('role')
+
+
+        serializer = self.get_serializer(user, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=HTTPStatus.OK)
 
     @action(detail=False, methods=['post'], url_path='auth/signup')
     def signup(self, request):
@@ -130,6 +158,9 @@ class UserViewSet(ModelViewSet):
         user = request.user
 
         if request.method in ['PUT', 'PATCH']:
+            if 'role' in request.data:
+                return Response({'detail': 'Невозможно изменить роль с ключом role'})
+
             serializer = self.get_serializer(user, data=request.data,
                                              partial=True)
             if serializer.is_valid():
