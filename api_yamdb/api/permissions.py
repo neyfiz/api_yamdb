@@ -43,3 +43,20 @@ class IsAuthorOrReadOnly(BasePermission):
             request.method in SAFE_METHODS
             or obj.author == request.user
         )
+
+
+class IsAdminModeratorAuthorOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        # Проверяем права для неавторизованных пользователей
+        if not request.user.is_authenticated:
+            return request.method in SAFE_METHODS
+        # Проверяем права для авторизованных пользователей
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        # Только безопасные методы или автор/админ/модератор
+        return (
+            request.method in SAFE_METHODS
+            or request.user.role in [UserRole.ADMIN, UserRole.MODERATOR]
+            or obj.author == request.user
+        )

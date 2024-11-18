@@ -22,7 +22,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Category, Genre, Review, Title
-from .permissions import IsAdmin, IsAuthorOrReadOnly
+from .permissions import IsAdmin, IsAuthorOrReadOnly, IsSelfOrAdmin, IsAdminOrModerator, IsAdminModeratorAuthorOrReadOnly
 from .serializers import (
     UserSerializer,
     CategorySerializer,
@@ -175,6 +175,7 @@ class UserViewSet(ModelViewSet):
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
     pagination_class = PageNumberPagination
+    permission_classes = (IsAuthorOrReadOnly,)
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -189,6 +190,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
@@ -203,7 +205,7 @@ class TitleViewSet(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = PageNumberPagination
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminModeratorAuthorOrReadOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
@@ -222,7 +224,7 @@ class ReviewViewSet(ModelViewSet):
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
     pagination_class = PageNumberPagination
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminModeratorAuthorOrReadOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
