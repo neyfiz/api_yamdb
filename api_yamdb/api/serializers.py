@@ -57,12 +57,15 @@ class GenreSerializer(ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer(many=False)
     rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
-        fields = [
-            'id', 'name', 'description', 'year', 'rating', 'category', 'genre']
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
 
 
 class TitlePostSerializer(ModelSerializer):
