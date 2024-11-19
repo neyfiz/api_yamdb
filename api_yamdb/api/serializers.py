@@ -1,8 +1,47 @@
+from django.core.validators import RegexValidator
+from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer
 
-from reviews.models import Category, Comment, Review, Genre, Title
+from reviews.models import (User, Category,
+                            Comment, Review,
+                            Genre, Title, UserRole)
+
+
+class UserSerializer(ModelSerializer):
+    username = serializers.CharField(
+        max_length=150,
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message='Имя пользователя может содержать только буквы,'
+                        ' цифры и символы: @/./+/-/_'
+            )
+        ]
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'role', 'first_name', 'last_name', 'bio']
+
+    def validate_role(self, value):
+        if value not in UserRole.values:
+            raise serializers.ValidationError('Недопустимая роль.')
+        return value
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise ValidationError("Этот никнейм нельзя использовать")
+        if User.objects.filter(username=value).exists():
+            raise ValidationError("Имя пользователя уже существует")
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise ValidationError("Пользователь с данным email уже существует")
+        return value
 
 
 class CategorySerializer(ModelSerializer):
@@ -17,18 +56,13 @@ class GenreSerializer(ModelSerializer):
         fields = ('name', 'slug')
 
 
-class TitleReadSerializer(ModelSerializer):
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer(many=False)
-    rating = SerializerMethodField(
-        read_only=True, default=None
-    )
+class TitleReadSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
+        fields = [
+            'id', 'name', 'description', 'year', 'rating', 'category', 'genre']
 
 
 class TitlePostSerializer(ModelSerializer):
@@ -42,9 +76,6 @@ class TitlePostSerializer(ModelSerializer):
     class Meta:
         model = Title
         fields = '__all__'
-
-    def to_representation(self, value):
-        return TitleReadSerializer(value).data
 
 
 class ReviewSerializer(ModelSerializer):
@@ -63,6 +94,11 @@ class ReviewSerializer(ModelSerializer):
                 raise ValidationError(
                     'Можно создать только 1 отзыв на 1 произведение'
                 )
+            score = data.get('score')
+            if score is not None:
+                if score < 1 or score > 10:
+                    raise ValidationError('Оценка должна быть от 1 до 10.')
+
         return data
 
 
