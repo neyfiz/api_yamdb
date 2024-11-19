@@ -180,7 +180,7 @@ class UserViewSet(ModelViewSet):
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
     pagination_class = PageNumberPagination
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = [IsAdminOnly]
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
