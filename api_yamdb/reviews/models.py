@@ -68,7 +68,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField('Название произведения', max_length=255)
+    name = models.CharField('Название произведения', max_length=MAX_LENGTH)
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',
@@ -135,6 +135,9 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ('title', 'author')
+        ordering = ('-pub_date',)
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
     def __str__(self):
         return f'Review by {self.author} on {self.title}'

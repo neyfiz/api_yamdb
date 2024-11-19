@@ -1,6 +1,6 @@
 import random
 from http import HTTPStatus
-
+from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -12,8 +12,7 @@ from rest_framework.mixins import (
 )
 from rest_framework.permissions import (
     AllowAny,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
+    IsAuthenticated
 )
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.decorators import action
@@ -22,8 +21,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Category, Genre, Review, Title
+from .filters import TitleFilter
 from .permissions import (
-    IsAuthorOrReadOnly,
     IsAdminOrAuthenticated,
     IsAdminModeratorAuthorOrReadOnly,
     IsAdminOnly,
@@ -45,18 +44,18 @@ class UserViewSet(ModelViewSet):
     pagination_class = PageNumberPagination
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     # Определяем доступы
     def get_permissions(self):
         print(f'Action: {self.action}')
 
         if self.action in ['signup', 'token']:
-            return [AllowAny()]
+            return (AllowAny())
 
         elif self.action in ['list', 'retrieve',
                              'destroy', 'partial_update']:
-            return [IsAdminOrAuthenticated()]
+            return (IsAdminOrAuthenticated())
         return super().get_permissions()
 
     # GET получить один обьект по pk
@@ -205,8 +204,11 @@ class UserViewSet(ModelViewSet):
 
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
-    pagination_class = PageNumberPagination
     permission_classes = (IsAdminOnly,)
+    lookup_field = 'slug'
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+    pagination_class = PageNumberPagination
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -220,12 +222,14 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    permission_classes = [IsAdminOnly]
-    http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
+    permission_classes = (IsAdminOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
     pagination_class = PageNumberPagination
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -235,8 +239,8 @@ class TitleViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
+    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
     pagination_class = PageNumberPagination
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminModeratorAuthorOrReadOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
@@ -254,8 +258,8 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
     pagination_class = PageNumberPagination
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminModeratorAuthorOrReadOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
