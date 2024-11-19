@@ -6,8 +6,11 @@ from django.shortcuts import get_object_or_404
 from http import HTTPStatus
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
-                                   ListModelMixin)
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin
+)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -15,13 +18,27 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .filters import TitleFilter
-from .permissions import (IsAdminModeratorAuthorOrReadOnly, IsAdminOnly,
-                          IsAdminOrAuthenticated)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ReviewSerializer,
-                          TitleReadSerializer, TitlePostSerializer,
-                          UserSerializer)
-from reviews.models import Category, Genre, Review, Title, User
+from .permissions import (
+    IsAdminModeratorAuthorOrReadOnly,
+    IsAdminOnly,
+    IsAdminOrAuthenticated
+)
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitlePostSerializer,
+    TitleReadSerializer,
+    UserSerializer
+)
+from reviews.models import (
+    Category,
+    Genre,
+    Review,
+    Title,
+    User
+)
 
 
 class UserViewSet(ModelViewSet):

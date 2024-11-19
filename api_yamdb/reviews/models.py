@@ -1,8 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from .constants import (MAX_LENGTH, MAX_LENGTH_EMAIL,
-                        MAX_LENGTH_ROLE, MAX_LENGTH_SLUG)
+from .constants import (
+    MAX_LENGTH,
+    MAX_LENGTH_EMAIL,
+    MAX_LENGTH_ROLE,
+    MAX_LENGTH_SLUG
+)
 
 
 # Роли пользователей
