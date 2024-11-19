@@ -27,10 +27,10 @@ from reviews.models import Category, Genre, Review, Title, User
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = PageNumberPagination
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     permission_classes = (IsAuthenticated,)
+    pagination_class = PageNumberPagination
 
     # Определяем доступы
     def get_permissions(self):
@@ -208,13 +208,13 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(ModelViewSet):
     permission_classes = (IsAdminOnly,)
-    http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
     pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -224,8 +224,8 @@ class TitleViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    pagination_class = PageNumberPagination
     permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
+    pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
@@ -243,8 +243,8 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    pagination_class = PageNumberPagination
     permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
+    pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
