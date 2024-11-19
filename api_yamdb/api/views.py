@@ -1,6 +1,7 @@
 import random
 from http import HTTPStatus
 
+from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -25,8 +26,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Category, Genre, Review, Title
 from .permissions import (
-    IsAdminOrAuthenticated,
     IsAuthorOrReadOnly,
+    IsAdminOrAuthenticated,
     IsAdminModeratorAuthorOrReadOnly,
     IsAdminOnly,
 )
@@ -39,8 +40,6 @@ from .serializers import (
     TitleReadSerializer,
     TitlePostSerializer,
 )
-from reviews.models import Category, Genre, Review, Title
-
 
 
 class UserViewSet(ModelViewSet):
@@ -210,7 +209,11 @@ class UserViewSet(ModelViewSet):
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
     pagination_class = PageNumberPagination
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = [IsAdminOnly]
+    lookup_field = 'slug'
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+    pagination_class = PageNumberPagination
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -230,6 +233,8 @@ class TitleViewSet(ModelViewSet):
         rating=Avg('reviews__score')
     ).order_by('name')
     pagination_class = PageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
