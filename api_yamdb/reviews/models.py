@@ -1,18 +1,20 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from .constants import (MAX_LENGTH, MAX_LENGTH_EMAIL,
-                        MAX_LENGTH_ROLE, MAX_LENGTH_SLUG)
+from .constants import (
+    MAX_LENGTH,
+    MAX_LENGTH_EMAIL,
+    MAX_LENGTH_ROLE,
+    MAX_LENGTH_SLUG
+)
 
 
-# Роли пользователей
 class UserRole(models.TextChoices):
     USER = 'user', 'User'
     MODERATOR = 'moderator', 'Moderator'
     ADMIN = 'admin', 'Admin'
 
 
-# Пользователь
 class User(AbstractUser):
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     role = models.CharField(
@@ -161,4 +163,7 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return f"Комментарий от {self.author.username} к отзыву на {self.review.title.name}"
+        return (
+            f"Комментарий от {self.author.username} к отзыву на "
+            f"{self.review.title.name}"
+        )

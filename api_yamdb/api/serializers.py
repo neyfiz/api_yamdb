@@ -3,9 +3,15 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import ValidationError
-
-from reviews.models import (Category, Comment, Genre,
-                            Review, Title, User, UserRole)
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    User,
+    UserRole
+)
 
 
 class UserSerializer(ModelSerializer):

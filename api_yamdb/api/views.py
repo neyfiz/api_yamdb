@@ -1,27 +1,39 @@
 import random
+from http import HTTPStatus
+
 from django.core.mail import send_mail
 from django.db.models import Avg
-from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from http import HTTPStatus
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
-                                   ListModelMixin)
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin
+)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Review, Title, User
 
 from .filters import TitleFilter
-from .permissions import (IsAdminModeratorAuthorOrReadOnly, IsAdminOnly,
-                          IsAdminOrAuthenticated)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ReviewSerializer,
-                          TitleReadSerializer, TitlePostSerializer,
-                          UserSerializer)
-from reviews.models import Category, Genre, Review, Title, User
+from .permissions import (
+    IsAdminModeratorAuthorOrReadOnly,
+    IsAdminOnly,
+    IsAdminOrAuthenticated
+)
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitlePostSerializer,
+    TitleReadSerializer,
+    UserSerializer
+)
 
 
 class UserViewSet(ModelViewSet):
@@ -32,7 +44,6 @@ class UserViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     pagination_class = PageNumberPagination
 
-    # Определяем доступы
     def get_permissions(self):
         print(f'Action: {self.action}')
 
@@ -44,25 +55,22 @@ class UserViewSet(ModelViewSet):
             return [IsAdminOrAuthenticated()]
         return super().get_permissions()
 
-    # GET получить один обьект по pk
     def retrieve(self, request, *args, **kwargs):
         username = kwargs.get('pk')
         user = get_object_or_404(User, username=username)
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
-    # PUT
     def update(self, request, *args, **kwargs):
-        return Response({'detail: Метод PUT не разрешён.'}, status=HTTPStatus.METHOD_NOT_ALLOWED)
+        return Response({'detail: Метод PUT не разрешён.'},
+                        status=HTTPStatus.METHOD_NOT_ALLOWED)
 
-    # DELETE
     def destroy(self, request, *args, **kwargs):
         username = kwargs.get('pk')
         user = get_object_or_404(User, username=username)
         user.delete()
         return Response(status=HTTPStatus.NO_CONTENT)
 
-    # PATCH
     def partial_update(self, request, *args, **kwargs):
         username = kwargs.get('pk')
         user = get_object_or_404(User, username=username)
@@ -95,15 +103,18 @@ class UserViewSet(ModelViewSet):
                 confirmation_code = random.randint(100000, 999999)
                 request.session['confirmation_code'] = confirmation_code
 
-                print(f'Код для уже созданого пользователя {confirmation_code}')
+                print(f'Код для уже созданного пользователя '
+                      f'{confirmation_code}')
 
                 return Response(
-                    {'username': existing_user.username, 'email': existing_user.email},
+                    {'username': existing_user.username,
+                     'email': existing_user.email},
                     status=HTTPStatus.OK
                 )
 
             return Response(
-                {'email': 'Email не совпадает с уже зарегистрированным пользователем.'},
+                {'email':
+                 'Email не совпадает с уже зарегистрированным пользователем.'},
                 status=HTTPStatus.BAD_REQUEST
             )
 
@@ -127,7 +138,8 @@ class UserViewSet(ModelViewSet):
             )
             request.session['confirmation_code'] = confirmation_code
 
-            print(f'Сохранённый код для нового пользователя: {username} - {confirmation_code}')
+            print(f'Сохранённый код для нового пользователя: {username} - '
+                  f'{confirmation_code}')
 
             return Response(response_data, status=HTTPStatus.OK)
 
@@ -139,7 +151,8 @@ class UserViewSet(ModelViewSet):
 
         if request.method in ['PUT', 'PATCH']:
             if 'role' in request.data:
-                return Response({'detail': 'Невозможно изменить роль с ключом role'})
+                return Response(
+                    {'detail': 'Невозможно изменить роль с ключом role'})
 
             serializer = self.get_serializer(user, data=request.data,
                                              partial=True)
@@ -167,12 +180,10 @@ class UserViewSet(ModelViewSet):
         stored_code = request.session.get('confirmation_code')
         print(f'Извлеченный код из сессии: {stored_code}')
 
-        # тут уязвимость, AllowAny in signup, token код выдаеться из последней сессии,
-        # можно создать админа от юзера с этим же кодом, в теории
-
         if not stored_code:
-            return Response({'detail': 'Код подтверждения не найден, укажите его заново.'},
-                            status=HTTPStatus.BAD_REQUEST)
+            return Response(
+                {'detail': 'Код подтверждения не найден, укажите его заново.'},
+                status=HTTPStatus.BAD_REQUEST)
 
         if str(confirmation_code) != str(stored_code):
             return Response({'detail': 'Неверный код подтверждения.'},
