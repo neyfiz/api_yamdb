@@ -23,8 +23,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import User, Category, Genre, Review, Title
 from .permissions import (
-    IsAdminOrAuthenticated,
     IsAuthorOrReadOnly,
+    IsAdminOrAuthenticated,
     IsAdminModeratorAuthorOrReadOnly,
     IsAdminOnly,
 )
@@ -180,7 +180,7 @@ class UserViewSet(ModelViewSet):
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
     pagination_class = PageNumberPagination
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAdminOnly,)
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
