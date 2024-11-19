@@ -1,6 +1,12 @@
-from django.db import models
-from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+from .constants import (
+    MAX_LENGTH,
+    MAX_LENGTH_EMAIL,
+    MAX_LENGTH_ROLE,
+    MAX_LENGTH_SLUG
+)
 
 
 class UserRole(models.TextChoices):
@@ -10,9 +16,12 @@ class UserRole(models.TextChoices):
 
 
 class User(AbstractUser):
-    email = models.EmailField(max_length=254, unique=True)
+    email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     role = models.CharField(
-        max_length=50, choices=UserRole.choices, default=UserRole.USER)
+        max_length=MAX_LENGTH_ROLE,
+        choices=UserRole.choices,
+        default=UserRole.USER
+    )
     bio = models.TextField(blank=True, null=True)
 
     groups = models.ManyToManyField(
@@ -67,7 +76,7 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField('Название произведения', max_length=255)
+    name = models.CharField('Название произведения', max_length=MAX_LENGTH)
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',

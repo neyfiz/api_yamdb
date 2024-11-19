@@ -1,51 +1,48 @@
 import random
 from http import HTTPStatus
 
-from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
-    ListModelMixin,
+    ListModelMixin
 )
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-)
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Review, Title, User
 
-from reviews.models import User, Category, Genre, Review, Title
+from .filters import TitleFilter
 from .permissions import (
-    IsAdminOrAuthenticated,
     IsAdminModeratorAuthorOrReadOnly,
     IsAdminOnly,
+    IsAdminOrAuthenticated
 )
 from .serializers import (
-    UserSerializer,
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
-    TitleReadSerializer,
     TitlePostSerializer,
+    TitleReadSerializer,
+    UserSerializer
 )
-from .filters import TitleFilter
 
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = PageNumberPagination
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
+    pagination_class = PageNumberPagination
 
     def get_permissions(self):
         print(f'Action: {self.action}')
@@ -189,10 +186,8 @@ class UserViewSet(ModelViewSet):
                 status=HTTPStatus.BAD_REQUEST)
 
         if str(confirmation_code) != str(stored_code):
-            return Response(
-                {'detail': 'Неверный код подтверждения.'},
-                status=HTTPStatus.BAD_REQUEST)
-
+            return Response({'detail': 'Неверный код подтверждения.'},
+                            status=HTTPStatus.BAD_REQUEST)
         refresh = RefreshToken.for_user(user)
         return Response(
             {
@@ -205,7 +200,7 @@ class UserViewSet(ModelViewSet):
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
     pagination_class = PageNumberPagination
-    permission_classes = [IsAdminOnly]
+    permission_classes = (IsAdminOnly,)
     lookup_field = 'slug'
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
@@ -223,14 +218,14 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    permission_classes = [IsAdminOnly]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = (IsAdminOnly,)
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
     pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -240,8 +235,8 @@ class TitleViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
+    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
     pagination_class = PageNumberPagination
-    permission_classes = [IsAdminModeratorAuthorOrReadOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
@@ -259,8 +254,8 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
     pagination_class = PageNumberPagination
-    permission_classes = [IsAdminModeratorAuthorOrReadOnly]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):

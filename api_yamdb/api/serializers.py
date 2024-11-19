@@ -1,12 +1,17 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers
-from rest_framework.validators import ValidationError
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
-
-from reviews.models import (User, Category,
-                            Comment, Review,
-                            Genre, Title, UserRole)
+from rest_framework.validators import ValidationError
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    User,
+    UserRole
+)
 
 
 class UserSerializer(ModelSerializer):
@@ -23,8 +28,9 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
-            'username', 'email', 'role', 'first_name', 'last_name', 'bio']
+        fields = (
+            'username', 'email', 'role', 'first_name', 'last_name', 'bio'
+        )
 
     def validate_role(self, value):
         if value not in UserRole.values:
@@ -101,7 +107,6 @@ class ReviewSerializer(ModelSerializer):
             if score is not None:
                 if score < 1 or score > 10:
                     raise ValidationError('Оценка должна быть от 1 до 10.')
-
         return data
 
 
