@@ -1,41 +1,27 @@
 import random
-from http import HTTPStatus
-from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (
-    CreateModelMixin,
-    DestroyModelMixin,
-    ListModelMixin,
-)
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated
-)
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from http import HTTPStatus
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
+                                   ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from reviews.models import User, Category, Genre, Review, Title
 from .filters import TitleFilter
-from .permissions import (
-    IsAdminOrAuthenticated,
-    IsAdminModeratorAuthorOrReadOnly,
-    IsAdminOnly,
-)
-from .serializers import (
-    UserSerializer,
-    CategorySerializer,
-    CommentSerializer,
-    GenreSerializer,
-    ReviewSerializer,
-    TitleReadSerializer,
-    TitlePostSerializer,
-)
+from .permissions import (IsAdminModeratorAuthorOrReadOnly, IsAdminOnly,
+                          IsAdminOrAuthenticated)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer,
+                          TitleReadSerializer, TitlePostSerializer,
+                          UserSerializer)
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class UserViewSet(ModelViewSet):
@@ -51,11 +37,11 @@ class UserViewSet(ModelViewSet):
         print(f'Action: {self.action}')
 
         if self.action in ['signup', 'token']:
-            return (AllowAny())
+            return [AllowAny()]
 
         elif self.action in ['list', 'retrieve',
                              'destroy', 'partial_update']:
-            return (IsAdminOrAuthenticated())
+            return [IsAdminOrAuthenticated()]
         return super().get_permissions()
 
     # GET получить один обьект по pk
@@ -67,7 +53,8 @@ class UserViewSet(ModelViewSet):
 
     # PUT
     def update(self, request, *args, **kwargs):
-        return Response({'detail: Метод PUT не разрешён.'}, status=HTTPStatus.METHOD_NOT_ALLOWED)
+        return Response({'detail: Метод PUT не разрешён.'},
+        status=HTTPStatus.METHOD_NOT_ALLOWED)
 
     # DELETE
     def destroy(self, request, *args, **kwargs):
