@@ -3,17 +3,16 @@ from api_yamdb.settings import MAX_LENGTH, MAX_LENGTH_SLUG
 from django.contrib.auth.models import AbstractUser
 
 
-# Роли пользователей
 class UserRole(models.TextChoices):
     USER = 'user', 'User'
     MODERATOR = 'moderator', 'Moderator'
     ADMIN = 'admin', 'Admin'
 
 
-# Пользователь
 class User(AbstractUser):
     email = models.EmailField(max_length=254, unique=True)
-    role = models.CharField(max_length=50, choices=UserRole.choices, default=UserRole.USER)
+    role = models.CharField(
+        max_length=50, choices=UserRole.choices, default=UserRole.USER)
     bio = models.TextField(blank=True, null=True)
 
     groups = models.ManyToManyField(
@@ -155,4 +154,7 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return f"Комментарий от {self.author.username} к отзыву на {self.review.title.name}"
+        return (
+            f"Комментарий от {self.author.username} к отзыву на "
+            f"{self.review.title.name}"
+        )
