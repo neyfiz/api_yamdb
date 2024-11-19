@@ -3,6 +3,8 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import ValidationError
+
+from reviews.constants import MAX_LENGTH_ROLE, USERNAME_SEARCH_REGEX, NOT_ALLOWED_USERNAMES
 from reviews.models import (
     Category,
     Comment,
@@ -16,10 +18,10 @@ from reviews.models import (
 
 class UserSerializer(ModelSerializer):
     username = serializers.CharField(
-        max_length=150,
+        max_length=MAX_LENGTH_ROLE,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
+                regex=USERNAME_SEARCH_REGEX,
                 message='Имя пользователя может содержать только буквы,'
                         ' цифры и символы: @/./+/-/_'
             )
@@ -38,7 +40,7 @@ class UserSerializer(ModelSerializer):
         return value
 
     def validate_username(self, value):
-        if value.lower() == 'me':
+        if value in NOT_ALLOWED_USERNAMES:
             raise ValidationError("Этот никнейм нельзя использовать")
         if User.objects.filter(username=value).exists():
             raise ValidationError("Имя пользователя уже существует")

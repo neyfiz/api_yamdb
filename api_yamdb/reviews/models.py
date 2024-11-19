@@ -1,18 +1,23 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from rest_framework.exceptions import ValidationError
 
 from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    MAX_LENGTH_SLUG
+    MAX_LENGTH_SLUG, NOT_ALLOWED_USERNAMES
 )
+
+ROLE_USER = 'user'
+ROLE_MODERATOR = 'moderator'
+ROLE_ADMIN = 'admin'
 
 
 class UserRole(models.TextChoices):
-    USER = 'user', 'User'
-    MODERATOR = 'moderator', 'Moderator'
-    ADMIN = 'admin', 'Admin'
+    USER = ROLE_USER, 'Пользователь'
+    MODERATOR = ROLE_MODERATOR, 'Модератор'
+    ADMIN = ROLE_ADMIN, 'Администратор'
 
 
 class User(AbstractUser):
@@ -43,7 +48,14 @@ class User(AbstractUser):
     )
 
     class Meta:
-        ordering = ['id']
+        verbose_name = 'Юзер'
+        verbose_name_plural = 'Юзеры'
+        ordering = ('role',)
+
+    def clean(self):
+        super().clean()
+        if self.username in NOT_ALLOWED_USERNAMES:
+            raise ValidationError(f'Имя пользователя не может быть {NOT_ALLOWED_USERNAMES}.')
 
     def __str__(self):
         return self.username
