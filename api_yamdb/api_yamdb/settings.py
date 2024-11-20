@@ -18,8 +18,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'api.apps.ApiConfig',
     'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
     'django_filters',
 ]
 
@@ -105,21 +105,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
-
-# параметры которые можно задать вручную
-# SIMPLE_JWT = {
-#     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-#     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-#     'ROTATE_REFRESH_TOKENS': True,
-#     'BLACKLIST_AFTER_ROTATION': True,
-#     'ALGORITHM': 'HS256',
-#     'SIGNING_KEY': SECRET_KEY,
-#     'AUTH_HEADER_TYPES': ('Bearer',),
-# }
-
-
-# указываем кастомную модель пользователя
 AUTH_USER_MODEL = 'reviews.User'
 
-# Письма отображаются в консоли.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

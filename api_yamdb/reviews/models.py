@@ -6,7 +6,8 @@ from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    MAX_LENGTH_SLUG, NOT_ALLOWED_USERNAMES
+    MAX_LENGTH_SLUG,
+    NOT_ALLOWED_USERNAMES
 )
 
 ROLE_USER = 'user'
@@ -47,6 +48,19 @@ class User(AbstractUser):
         verbose_name='Права пользователя',
     )
 
+    @property
+    def is_admin(self):
+        """Проверяет, является ли пользователь администратором."""
+        return (
+            self.is_superuser
+            or self.is_staff
+            or self.role == UserRole.ADMIN)
+
+    @property
+    def is_moderator(self):
+        """Проверяет, является ли пользователь модератором."""
+        return self.role == UserRole.MODERATOR
+
     class Meta:
         verbose_name = 'Юзер'
         verbose_name_plural = 'Юзеры'
@@ -55,7 +69,8 @@ class User(AbstractUser):
     def clean(self):
         super().clean()
         if self.username in NOT_ALLOWED_USERNAMES:
-            raise ValidationError(f'Имя пользователя не может быть {NOT_ALLOWED_USERNAMES}.')
+            raise ValidationError(
+                f'Имя пользователя не может быть {NOT_ALLOWED_USERNAMES}.')
 
     def __str__(self):
         return self.username
@@ -142,34 +157,44 @@ class GenreTitle(models.Model):
         return f'{self.genre.name} {self.title.name}'
 
 
-class Review(models.Model):
-    title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews'
-    )
-    text = models.TextField()
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews'
-    )
-    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
-    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-
-    class Meta:
-        unique_together = ('title', 'author')
-
-    def __str__(self):
-        return f'Review by {self.author} on {self.title}'
-
-
-class Comment(models.Model):
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments')
-    review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name='comments')
+class ReviewCommentBase(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     pub_date = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True)
+        'Дата добавления', auto_now_add=True, db_index=True
+    )
 
     class Meta:
+        abstract = True
+        ordering = ['text']
+        verbose_name = 'Комментарий/Отзыв'
+        verbose_name_plural = 'Комментарии/Отзывы'
+
+
+class Review(ReviewCommentBase):
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
+
+    class Meta:
+        default_related_name = 'reviews'
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_title_author'
+            )
+        ]
+
+    def __str__(self):
+        return f'Отзыв от {self.author} на {self.title}'
+
+
+class Comment(ReviewCommentBase):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+
+    class Meta:
+        default_related_name = 'comments'
         ordering = ('-pub_date',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
