@@ -51,8 +51,6 @@ class UserViewSet(ModelViewSet):
 
     # Определяем доступы
     def get_permissions(self):
-        print(f'Action: {self.action}')
-
         if self.action in ['signup', 'token']:
             return [AllowAny()]
 

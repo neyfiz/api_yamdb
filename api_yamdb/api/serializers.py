@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import IntegerField, ModelSerializer
 from rest_framework.validators import ValidationError
 
 from reviews.constants import VALIDATE_DATE_ERROR
@@ -68,7 +68,7 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
-    rating = serializers.FloatField(read_only=True)
+    rating = IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -92,7 +92,7 @@ class TitlePostSerializer(ModelSerializer):
     def validate_date(value):
         year = timezone.datetime.now().year
         if value > timezone.datetime.now().year:
-            raise serializers.ValidationError(
+            raise ValidationError(
                 VALIDATE_DATE_ERROR.format(year=year)
             )
 
