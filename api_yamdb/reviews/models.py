@@ -5,7 +5,6 @@ from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    MAX_LENGTH_SLUG
 )
 
 
@@ -45,36 +44,40 @@ class User(AbstractUser):
     )
 
     class Meta:
-        ordering = ['id']
+        ordering = ('id',)
 
     def __str__(self):
         return self.username
 
 
-class Category(models.Model):
+class SlugCategoryGenreModel(models.Model):
+    name = models.CharField('Имя', max_length=MAX_LENGTH)
+    slug = models.SlugField('Слаг', unique=True)
+
+    class Meta:
+        abstract = True
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+
+class Category(SlugCategoryGenreModel):
     name = models.CharField('Имя категории', max_length=MAX_LENGTH)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ('name',)
-
-    def __str__(self):
-        return self.name
 
 
-class Genre(models.Model):
+class Genre(SlugCategoryGenreModel):
     name = models.CharField('Имя жанра', max_length=MAX_LENGTH)
-    slug = models.SlugField('Слаг', max_length=MAX_LENGTH_SLUG, unique=True)
+    slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('name',)
-
-    def __str__(self):
-        return self.name
 
 
 class Title(models.Model):
@@ -140,7 +143,7 @@ class Review(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='reviews'
     )
-    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
+    score = models.IntegerField('Оценка', blank=True, null=True)
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:

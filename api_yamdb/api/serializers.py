@@ -1,9 +1,11 @@
 from django.core.validators import RegexValidator
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import ValidationError
 
+from reviews.constants import VALIDATE_DATE_ERROR
 from reviews.models import (
     Category,
     Comment,
@@ -87,13 +89,20 @@ class TitlePostSerializer(ModelSerializer):
         model = Title
         fields = '__all__'
 
+    def validate_date(value):
+        year = timezone.datetime.now().year
+        if value > timezone.datetime.now().year:
+            raise serializers.ValidationError(
+                VALIDATE_DATE_ERROR.format(year=year)
+            )
+
 
 class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(slug_field='username', read_only=True)
 
     class Meta:
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
 
     def validate(self, data):
         request = self.context['request']
@@ -112,9 +121,7 @@ class ReviewSerializer(ModelSerializer):
 
 
 class CommentSerializer(ModelSerializer):
-    author = SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
+    author = SlugRelatedField(read_only=True, slug_field='username')
 
     class Meta:
         model = Comment
