@@ -3,6 +3,8 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import ValidationError
+
+from reviews.constants import MAX_REVIEW, MIN_REVIEW
 from reviews.models import (
     Category,
     Comment,
@@ -104,9 +106,9 @@ class ReviewSerializer(ModelSerializer):
                     'Можно создать только 1 отзыв на 1 произведение'
                 )
             score = data.get('score')
-            if score is not None:
-                if score < 1 or score > 10:
-                    raise ValidationError('Оценка должна быть от 1 до 10.')
+            if score is not None and not (MIN_REVIEW <= score <= MAX_REVIEW):
+                raise ValidationError(
+                    f'Оценка должна быть от {MIN_REVIEW} до {MAX_REVIEW}.')
         return data
 
 
