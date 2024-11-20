@@ -82,19 +82,23 @@ class TitlePostSerializer(ModelSerializer):
         queryset=Category.objects.all(), slug_field='slug'
     )
     genre = SlugRelatedField(
-        many=True, queryset=Genre.objects.all(), slug_field='slug'
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug',
+        required=True
     )
 
     class Meta:
         model = Title
         fields = '__all__'
 
-    def validate_date(value):
+    def validate_year(self, value):
         year = timezone.datetime.now().year
-        if value > timezone.datetime.now().year:
+        if value > year:
             raise ValidationError(
                 VALIDATE_DATE_ERROR.format(year=year)
             )
+        return value
 
 
 class ReviewSerializer(ModelSerializer):
