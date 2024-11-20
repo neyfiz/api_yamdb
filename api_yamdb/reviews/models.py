@@ -1,21 +1,26 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from rest_framework.exceptions import ValidationError
 
 from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
+    MAX_LENGTH_SLUG,
+    NOT_ALLOWED_USERNAMES
 )
 
+ROLE_USER = 'user'
+ROLE_MODERATOR = 'moderator'
+ROLE_ADMIN = 'admin'
 
-# Роли пользователей
+
 class UserRole(models.TextChoices):
-    USER = 'user', 'User'
-    MODERATOR = 'moderator', 'Moderator'
-    ADMIN = 'admin', 'Admin'
+    USER = ROLE_USER, 'Пользователь'
+    MODERATOR = ROLE_MODERATOR, 'Модератор'
+    ADMIN = ROLE_ADMIN, 'Администратор'
 
 
-# Пользователь
 class User(AbstractUser):
     email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
     role = models.CharField(
@@ -43,8 +48,30 @@ class User(AbstractUser):
         verbose_name='Права пользователя',
     )
 
+    @property
+    def is_admin(self):
+        """Проверяет, является ли пользователь администратором."""
+        return (
+            self.is_superuser
+            or self.is_staff
+            or self.role == UserRole.ADMIN)
+
+    @property
+    def is_moderator(self):
+        """Проверяет, является ли пользователь модератором."""
+        return self.role == UserRole.MODERATOR
+
     class Meta:
         ordering = ('id',)
+        verbose_name = 'Юзер'
+        verbose_name_plural = 'Юзеры'
+        ordering = ('role',)
+
+    def clean(self):
+        super().clean()
+        if self.username in NOT_ALLOWED_USERNAMES:
+            raise ValidationError(
+                f'Имя пользователя не может быть {NOT_ALLOWED_USERNAMES}.')
 
     def __str__(self):
         return self.username
@@ -135,6 +162,7 @@ class GenreTitle(models.Model):
         return f'{self.genre.name} {self.title.name}'
 
 
+<<<<<<< HEAD
 class Review(models.Model):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews'
@@ -148,6 +176,9 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ('title', 'author')
+        ordering = ('-pub_date',)
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
     def __str__(self):
         return f'Review by {self.author} on {self.title}'
@@ -158,14 +189,52 @@ class Comment(models.Model):
         User, on_delete=models.CASCADE, related_name='comments')
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, related_name='comments')
+=======
+class ReviewCommentBase(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+>>>>>>> develop
     text = models.TextField()
     pub_date = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True)
+        'Дата добавления', auto_now_add=True, db_index=True
+    )
 
     class Meta:
+        abstract = True
+        ordering = ['text']
+        verbose_name = 'Комментарий/Отзыв'
+        verbose_name_plural = 'Комментарии/Отзывы'
+
+
+class Review(ReviewCommentBase):
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
+
+    class Meta:
+        default_related_name = 'reviews'
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_title_author'
+            )
+        ]
+
+    def __str__(self):
+        return f'Отзыв от {self.author} на {self.title}'
+
+
+class Comment(ReviewCommentBase):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+
+    class Meta:
+        default_related_name = 'comments'
         ordering = ('-pub_date',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return f"Комментарий от {self.author.username} к отзыву на {self.review.title.name}"
+        return (
+            f"Комментарий от {self.author.username} к отзыву на "
+            f"{self.review.title.name}"
+        )

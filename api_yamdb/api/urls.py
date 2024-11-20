@@ -25,16 +25,20 @@ v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='review'
 )
 
+auth_urlpatterns = [
+    path('signup/',
+         UserViewSet.as_view({'post': 'signup'}),
+         name='signup'),
+    path('token/',
+         UserViewSet.as_view({'post': 'token'}),
+         name='token_obtain_pair'),
+]
+
 v1_urlpatterns = [
     path('', include(v1_router.urls)),
+    path('auth/', include(auth_urlpatterns)),
 ]
 
 urlpatterns = [
     path('v1/', include(v1_urlpatterns)),
-    path('v1/auth/signup/',
-         UserViewSet.as_view({'post': 'signup'}),
-         name='signup'),
-    path('v1/auth/token/',
-         UserViewSet.as_view({'post': 'token'}),
-         name='token_obtain_pair'),
 ]
