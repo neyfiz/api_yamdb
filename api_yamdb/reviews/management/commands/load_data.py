@@ -1,6 +1,7 @@
 import csv
 
 from django.core.management import BaseCommand
+
 from reviews.models import (
     Category,
     Comment,
