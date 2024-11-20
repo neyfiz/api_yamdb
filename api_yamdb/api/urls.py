@@ -35,7 +35,6 @@ v1_urlpatterns = [
     path('auth/', include(auth_urlpatterns)),
 ]
 
-# Общий список URL для всего приложения
 urlpatterns = [
     path('v1/', include(v1_urlpatterns)),
 ]
