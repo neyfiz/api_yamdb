@@ -7,7 +7,9 @@ from .views import (
     GenreViewSet,
     ReviewViewSet,
     TitleViewSet,
-    UserViewSet
+    UserViewSet,
+    SignupAPIView,
+    TokenObtainAPIView
 )
 
 app_name = 'api'
@@ -25,13 +27,10 @@ v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='review'
 )
 
+
 auth_urlpatterns = [
-    path('signup/',
-         UserViewSet.as_view({'post': 'signup'}),
-         name='signup'),
-    path('token/',
-         UserViewSet.as_view({'post': 'token'}),
-         name='token_obtain_pair'),
+    path('signup/', SignupAPIView.as_view(), name='signup'),
+    path('token/', TokenObtainAPIView.as_view(), name='token_obtain_pair'),
 ]
 
 v1_urlpatterns = [
