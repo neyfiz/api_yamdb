@@ -1,6 +1,5 @@
 from django.core.validators import RegexValidator
 from django.utils import timezone
-from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import IntegerField, ModelSerializer
@@ -45,7 +44,7 @@ class UserSerializer(ModelSerializer):
 
     def validate_role(self, value):
         if value not in UserRole.values:
-            raise ValidationError('Недопустимая роль.')
+            raise serializers.ValidationError('Недопустимая роль.')
         return value
 
     def validate_username(self, value):
@@ -73,7 +72,7 @@ class GenreSerializer(ModelSerializer):
         fields = ('name', 'slug')
 
 
-class TitleReadSerializer(ModelSerializer):
+class TitleReadSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
     rating = IntegerField(read_only=True)
@@ -107,9 +106,6 @@ class TitlePostSerializer(ModelSerializer):
                 VALIDATE_DATE_ERROR.format(year=year)
             )
         return value
-
-    def to_representation(self, value):
-        return TitleReadSerializer(value).data
 
 
 class ReviewSerializer(ModelSerializer):
