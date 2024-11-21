@@ -6,7 +6,6 @@ from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    MAX_LENGTH_SLUG,
     NOT_ALLOWED_USERNAMES
 )
 
@@ -90,18 +89,12 @@ class SlugCategoryGenreModel(models.Model):
 
 
 class Category(SlugCategoryGenreModel):
-    name = models.CharField('Имя категории', max_length=MAX_LENGTH)
-    slug = models.SlugField('Слаг', unique=True)
-
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
 class Genre(SlugCategoryGenreModel):
-    name = models.CharField('Имя жанра', max_length=MAX_LENGTH)
-    slug = models.SlugField('Слаг', unique=True)
-
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
@@ -162,37 +155,8 @@ class GenreTitle(models.Model):
         return f'{self.genre.name} {self.title.name}'
 
 
-<<<<<<< HEAD
-class Review(models.Model):
-    title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews'
-    )
-    text = models.TextField()
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews'
-    )
-    score = models.IntegerField('Оценка', blank=True, null=True)
-    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-
-    class Meta:
-        unique_together = ('title', 'author')
-        ordering = ('-pub_date',)
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'
-
-    def __str__(self):
-        return f'Review by {self.author} on {self.title}'
-
-
-class Comment(models.Model):
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments')
-    review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name='comments')
-=======
 class ReviewCommentBase(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
->>>>>>> develop
     text = models.TextField()
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True
@@ -206,8 +170,10 @@ class ReviewCommentBase(models.Model):
 
 
 class Review(ReviewCommentBase):
-    title = models.ForeignKey(Title, on_delete=models.CASCADE)
-    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='reviews'
+    )
+    score = models.IntegerField('Оценка', blank=True, null=True)
 
     class Meta:
         default_related_name = 'reviews'

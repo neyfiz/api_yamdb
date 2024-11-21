@@ -10,8 +10,13 @@ from rest_framework.mixins import (
     DestroyModelMixin,
     ListModelMixin
 )
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated
+)
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
@@ -37,6 +42,7 @@ from reviews.models import (
     Title,
     User
 )
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class UserViewSet(ModelViewSet):
@@ -62,7 +68,8 @@ class UserViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        return Response({'detail: Метод PUT не разрешён.'}, status=HTTPStatus.METHOD_NOT_ALLOWED)
+        return Response({'detail: Метод PUT не разрешён.'},
+                        status=HTTPStatus.METHOD_NOT_ALLOWED)
 
     def destroy(self, request, *args, **kwargs):
         username = kwargs.get('pk')
@@ -86,8 +93,6 @@ class UserViewSet(ModelViewSet):
 
         username = request.data.get('username')
         email = request.data.get('email')
-
-        print(f'{username}')
 
         if username == 'me':
             return Response(
@@ -136,9 +141,6 @@ class UserViewSet(ModelViewSet):
                 fail_silently=False,
             )
             request.session['confirmation_code'] = confirmation_code
-
-            print(f'Сохранённый код для нового пользователя: {username} - '
-                  f'{confirmation_code}')
 
             return Response(response_data, status=HTTPStatus.OK)
 
@@ -216,12 +218,11 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    permission_classes = [IsAdminOnly]
+    permission_classes = (IsAdminOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
-    permission_classes = (IsAdminOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     pagination_class = PageNumberPagination
@@ -231,27 +232,8 @@ class TitleViewSet(ModelViewSet):
             return TitleReadSerializer
         return TitlePostSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=201)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def perform_create(self, serializer):
-        serializer.save()
-
-    def perform_update(self, serializer):
-        serializer.save()
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
 
 
 class ReviewViewSet(ModelViewSet):
