@@ -10,7 +10,8 @@ from reviews.constants import (
     MAX_REVIEW,
     MIN_REVIEW,
     NOT_ALLOWED_USERNAMES,
-    USERNAME_SEARCH_REGEX
+    USERNAME_SEARCH_REGEX,
+    VALIDATE_DATE_ERROR
 )
 from reviews.models import (
     Category,
