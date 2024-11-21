@@ -1,5 +1,4 @@
 from http import HTTPStatus
-
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -14,14 +13,14 @@ from rest_framework.mixins import (
     ListModelMixin
 )
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from reviews.constants import RESPONSE_EMAIL
-from reviews.models import Category, Genre, Review, Title, User
 
 from .filters import TitleFilter
 from .permissions import (
@@ -39,6 +38,14 @@ from .serializers import (
     UserSerializer,
     TokenObtainSerializer, UserSignupSerializer
 )
+from reviews.constants import RESPONSE_EMAIL
+from reviews.models import (
+    Category,
+    Genre,
+    Review,
+    Title,
+    User
+)
 
 
 class UserViewSet(ModelViewSet):
@@ -52,6 +59,7 @@ class UserViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_permissions(self):
+        print(f'Action: {self.action}')
 
         if self.action in ['signup', 'token']:
             return [AllowAny()]
@@ -157,19 +165,22 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
+    http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = (IsAdminUserOnly,)
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
-    pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
         return TitlePostSerializer
+
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
 
 
 class ReviewViewSet(ModelViewSet):

@@ -1,9 +1,10 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.validators import RegexValidator
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import IntegerField, ModelSerializer
 from rest_framework.validators import ValidationError
 
 from reviews.constants import (
@@ -12,7 +13,7 @@ from reviews.constants import (
     MIN_REVIEW,
     NOT_ALLOWED_USERNAMES,
     USERNAME_SEARCH_REGEX,
-
+    VALIDATE_DATE_ERROR
 )
 from reviews.models import (
     Category,
@@ -67,7 +68,8 @@ class UserSerializer(ModelSerializer):
     def validate_email(self, value):
         if self.instance is None:
             if User.objects.filter(email=value).exists():
-                raise ValidationError("Пользователь с данным email уже существует")
+                raise ValidationError(
+                    "Пользователь с данным email уже существует")
         return value
 
     def update(self, instance, validated_data):
@@ -81,7 +83,8 @@ class UserSignupSerializer(serializers.ModelSerializer):
         validators=[
             RegexValidator(
                 regex=USERNAME_SEARCH_REGEX,
-                message='Имя пользователя может содержать только буквы, цифры и символы: @/./+/-/_'
+                message='Имя пользователя может содержать только буквы,'
+                        'цифры и символы: @/./+/-/_'
             )
         ]
     )
@@ -99,12 +102,14 @@ class UserSignupSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         if value in NOT_ALLOWED_USERNAMES:
-            raise serializers.ValidationError("Этот никнейм нельзя использовать.")
+            raise serializers.ValidationError(
+                "Этот никнейм нельзя использовать.")
         return value
 
     def validate_email(self, value):
         if not self.instance and User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Пользователь с данным email уже существует.")
+            raise serializers.ValidationError(
+                "Пользователь с данным email уже существует.")
         return value
 
 
@@ -122,7 +127,8 @@ class TokenObtainSerializer(serializers.Serializer):
             raise NotFound({'username': 'Пользователь не найден.'})
 
         if not default_token_generator.check_token(user, confirmation_code):
-            raise serializers.ValidationError({'confirmation_code': 'Неверный код подтверждения.'})
+            raise serializers.ValidationError(
+                {'confirmation_code': 'Неверный код подтверждения.'})
 
         attrs['user'] = user
         return attrs
@@ -143,7 +149,7 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
-    rating = serializers.FloatField(read_only=True)
+    rating = IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -157,20 +163,31 @@ class TitlePostSerializer(ModelSerializer):
         queryset=Category.objects.all(), slug_field='slug'
     )
     genre = SlugRelatedField(
-        many=True, queryset=Genre.objects.all(), slug_field='slug'
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug',
+        required=True
     )
 
     class Meta:
         model = Title
         fields = '__all__'
 
+    def validate_year(self, value):
+        year = timezone.datetime.now().year
+        if value > year:
+            raise ValidationError(
+                VALIDATE_DATE_ERROR.format(year=year)
+            )
+        return value
+
 
 class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(slug_field='username', read_only=True)
 
     class Meta:
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
 
     def validate(self, data):
         request = self.context['request']
@@ -189,9 +206,7 @@ class ReviewSerializer(ModelSerializer):
 
 
 class CommentSerializer(ModelSerializer):
-    author = SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
+    author = SlugRelatedField(read_only=True, slug_field='username')
 
     class Meta:
         model = Comment
