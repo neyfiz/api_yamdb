@@ -1,5 +1,4 @@
 from http import HTTPStatus
-
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -14,19 +13,19 @@ from rest_framework.mixins import (
     ListModelMixin
 )
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.constants import RESPONSE_EMAIL
-from reviews.models import Category, Genre, Review, Title, User
-
 from .filters import TitleFilter
 from .permissions import (
     IsAdminModeratorAuthorOrReadOnly,
-    IsAdminOnly,
+    IsAdminUserOnly,
     IsAdminOrAuthenticated
 )
 from .serializers import (
@@ -39,6 +38,14 @@ from .serializers import (
     UserSerializer,
     TokenObtainSerializer, UserSignupSerializer
 )
+from reviews.constants import RESPONSE_EMAIL
+from reviews.models import (
+    Category,
+    Genre,
+    Review,
+    Title,
+    User
+)
 
 
 class UserViewSet(ModelViewSet):
@@ -48,9 +55,11 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username',)
     permission_classes = (IsAuthenticated,)
     pagination_class = PageNumberPagination
+    lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_permissions(self):
+        print(f'Action: {self.action}')
 
         if self.action in ['signup', 'token']:
             return [AllowAny()]
@@ -59,29 +68,6 @@ class UserViewSet(ModelViewSet):
                              'destroy', 'partial_update']:
             return [IsAdminOrAuthenticated()]
         return super().get_permissions()
-
-    def retrieve(self, request, *args, **kwargs):
-        username = kwargs.get('pk')
-        user = get_object_or_404(User, username=username)
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
-
-    def destroy(self, request, *args, **kwargs):
-        username = kwargs.get('pk')
-        user = get_object_or_404(User, username=username)
-        user.delete()
-        return Response(status=HTTPStatus.NO_CONTENT)
-
-    def partial_update(self, request, *args, **kwargs):
-        username = kwargs.get('pk')
-        user = get_object_or_404(User, username=username)
-
-        data = request.data.copy()
-
-        serializer = self.get_serializer(user, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=HTTPStatus.OK)
 
     @action(detail=False, methods=['get', 'patch'], url_path='me')
     def me(self, request):
@@ -114,7 +100,9 @@ class SignupAPIView(APIView):
                     status=HTTPStatus.OK
                 )
             return Response(
-                {'email': 'Email не совпадает с уже зарегистрированным пользователем.'},
+                {'email': (
+                    'Email не совпадает с уже зарегистрированным'
+                    'пользователем.')},
                 status=HTTPStatus.BAD_REQUEST
             )
 
@@ -135,6 +123,7 @@ class SignupAPIView(APIView):
             {'username': user.username, 'email': user.email},
             status=HTTPStatus.OK
         )
+
 
 class TokenObtainAPIView(APIView):
     permission_classes = [AllowAny]
@@ -158,7 +147,7 @@ class TokenObtainAPIView(APIView):
 class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
                                ListModelMixin, GenericViewSet):
     pagination_class = PageNumberPagination
-    permission_classes = (IsAdminOnly,)
+    permission_classes = (IsAdminUserOnly,)
     lookup_field = 'slug'
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
@@ -176,19 +165,22 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    permission_classes = (IsAdminOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = (IsAdminUserOnly,)
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
-    pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
         return TitlePostSerializer
+
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
 
 
 class ReviewViewSet(ModelViewSet):

@@ -6,7 +6,6 @@ from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    MAX_LENGTH_SLUG,
     NOT_ALLOWED_USERNAMES
 )
 
@@ -62,6 +61,7 @@ class User(AbstractUser):
         return self.role == UserRole.MODERATOR
 
     class Meta:
+        ordering = ('id',)
         verbose_name = 'Юзер'
         verbose_name_plural = 'Юзеры'
         ordering = ('role',)
@@ -76,30 +76,28 @@ class User(AbstractUser):
         return self.username
 
 
-class Category(models.Model):
-    name = models.CharField('Имя категории', max_length=MAX_LENGTH)
+class SlugCategoryGenreModel(models.Model):
+    name = models.CharField('Имя', max_length=MAX_LENGTH)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
-        verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'
+        abstract = True
         ordering = ('name',)
 
     def __str__(self):
         return self.name
 
 
-class Genre(models.Model):
-    name = models.CharField('Имя жанра', max_length=MAX_LENGTH)
-    slug = models.SlugField('Слаг', max_length=MAX_LENGTH_SLUG, unique=True)
+class Category(SlugCategoryGenreModel):
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
+
+class Genre(SlugCategoryGenreModel):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('name',)
-
-    def __str__(self):
-        return self.name
 
 
 class Title(models.Model):
@@ -172,8 +170,10 @@ class ReviewCommentBase(models.Model):
 
 
 class Review(ReviewCommentBase):
-    title = models.ForeignKey(Title, on_delete=models.CASCADE)
-    score = models.IntegerField(verbose_name="Оценка", blank=True, null=True)
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='reviews'
+    )
+    score = models.IntegerField('Оценка', blank=True, null=True)
 
     class Meta:
         default_related_name = 'reviews'

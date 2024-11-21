@@ -1,87 +1,74 @@
 import csv
-
-from django.core.management import BaseCommand
+from django.core.management.base import BaseCommand
 
 from reviews.models import (
     Category,
     Comment,
     Genre,
     GenreTitle,
-    Review,
     Title,
+    Review,
     User
 )
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
+        models = [
+            (User, 'users.csv', {
+                'id': 'id',
+                'username': 'username',
+                'email': 'email',
+                'role': 'role',
+                'bio': 'bio',
+                'first_name': 'first_name',
+                'last_name': 'last_name',
+            }),
+            (Category, 'category.csv', {
+                'id': 'id',
+                'name': 'name',
+                'slug': 'slug',
+            }),
+            (Genre, 'genre.csv', {
+                'id': 'id',
+                'name': 'name',
+                'slug': 'slug',
+            }),
+            (Title, 'titles.csv', {
+                'id': 'id',
+                'name': 'name',
+                'year': 'year',
+                'category_id': 'category',
+            }),
+            (GenreTitle, 'genre_title.csv', {
+                'id': 'id',
+                'title_id': 'title_id',
+                'genre_id': 'genre_id',
+            }),
+            (Review, 'review.csv', {
+                'id': 'id',
+                'title_id': 'title_id',
+                'text': 'text',
+                'author_id': 'author',
+                'score': 'score',
+                'pub_date': 'pub_date',
+            }),
+            (Comment, 'comments.csv', {
+                'id': 'id',
+                'review_id': 'review_id',
+                'text': 'text',
+                'author_id': 'author',
+                'pub_date': 'pub_date',
+            }),
+        ]
 
-        with open('static/data/users.csv', 'r', encoding='utf-8') as csvfile:
+        for model, filename, fields in models:
+            self.import_data(model, filename, fields)
+
+    def import_data(self, model, filename, fields):
+        with open(f'static/data/{filename}', 'r', encoding='utf-8') as csvfile:
             dict_reader = csv.DictReader(csvfile)
             for row in dict_reader:
-                User.objects.get_or_create(
-                    id=row['id'],
-                    username=row['username'],
-                    email=row['email'],
-                    role=row['role'],
-                    bio=row['bio'],
-                    first_name=row['first_name'],
-                    last_name=row['last_name'])
-
-        with open('static/data/category.csv', 'r',
-                  encoding='utf-8') as csvfile:
-            dict_reader = csv.DictReader(csvfile)
-            for row in dict_reader:
-                Category.objects.get_or_create(
-                    id=row['id'],
-                    name=row['name'],
-                    slug=row['slug'])
-
-        with open('static/data/genre.csv', 'r', encoding='utf-8') as csvfile:
-            dict_reader = csv.DictReader(csvfile)
-            for row in dict_reader:
-                Genre.objects.get_or_create(
-                    id=row['id'],
-                    name=row['name'],
-                    slug=row['slug'])
-
-        with open('static/data/titles.csv', 'r', encoding='utf-8') as csvfile:
-            dict_reader = csv.DictReader(csvfile)
-            for row in dict_reader:
-                Title.objects.get_or_create(
-                    id=row['id'],
-                    name=row['name'],
-                    year=row['year'],
-                    category_id=row['category'])
-
-        with open('static/data/genre_title.csv') as csvfile:
-            dict_reader = csv.DictReader(csvfile)
-            for row in dict_reader:
-                GenreTitle.objects.get_or_create(
-                    id=row['id'],
-                    title_id=row['title_id'],
-                    genre_id=row['genre_id'],
+                obj, created = model.objects.get_or_create(
+                    **{field: row[value] for field, value in fields.items()}
                 )
-
-        with open('static/data/review.csv', 'r', encoding='utf-8') as csvfile:
-            dict_reader = csv.DictReader(csvfile)
-            for row in dict_reader:
-                Review.objects.get_or_create(
-                    id=row['id'],
-                    title_id=row['title_id'],
-                    text=row['text'],
-                    author_id=row['author'],
-                    score=row['score'],
-                    pub_date=row['pub_date'])
-
-        with open('static/data/comments.csv', 'r',
-                  encoding='utf-8') as csvfile:
-            dict_reader = csv.DictReader(csvfile)
-            for row in dict_reader:
-                Comment.objects.get_or_create(
-                    id=row['id'],
-                    review_id=row['review_id'],
-                    text=row['text'],
-                    author_id=row['author'],
-                    pub_date=row['pub_date'])

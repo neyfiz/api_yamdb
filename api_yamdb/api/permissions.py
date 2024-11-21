@@ -10,7 +10,7 @@ class IsAdminOrAuthenticated(BasePermission):
         return request.user.is_admin
 
 
-class IsAdminOnly(BasePermission):
+class IsAdminUserOnly(BasePermission):
     """Разрешение, доступное только администраторам."""
 
     def has_permission(self, request, view):
