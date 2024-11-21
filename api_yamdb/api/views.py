@@ -1,29 +1,27 @@
+import random
 from http import HTTPStatus
-
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin
 )
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated
 )
-from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from reviews.models import Category, Genre, Review, Title, User
 
 from .filters import TitleFilter
 from .permissions import (
@@ -41,6 +39,7 @@ from .serializers import (
     UserSerializer,
     TokenObtainSerializer, UserSignupSerializer
 )
+from reviews.constants import RESPONSE_EMAIL
 from reviews.models import (
     Category,
     Genre,
@@ -207,6 +206,7 @@ class SignupAPIView(APIView):
             {'username': user.username, 'email': user.email},
             status=HTTPStatus.OK
         )
+
 
 class TokenObtainAPIView(APIView):
     permission_classes = [AllowAny]
