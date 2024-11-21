@@ -16,7 +16,7 @@ from rest_framework.permissions import (
 )
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
@@ -42,7 +42,6 @@ from reviews.models import (
     Title,
     User
 )
-from reviews.models import Category, Genre, Review, Title, User
 
 
 class UserViewSet(ModelViewSet):
