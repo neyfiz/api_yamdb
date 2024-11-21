@@ -1,7 +1,8 @@
 from django.core.validators import RegexValidator
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import IntegerField, ModelSerializer
 from rest_framework.validators import ValidationError
 
 from reviews.constants import (
@@ -9,7 +10,8 @@ from reviews.constants import (
     MAX_REVIEW,
     MIN_REVIEW,
     NOT_ALLOWED_USERNAMES,
-    USERNAME_SEARCH_REGEX
+    USERNAME_SEARCH_REGEX,
+    VALIDATE_DATE_ERROR
 )
 from reviews.models import (
     Category,
@@ -42,7 +44,7 @@ class UserSerializer(ModelSerializer):
 
     def validate_role(self, value):
         if value not in UserRole.values:
-            raise serializers.ValidationError('Недопустимая роль.')
+            raise ValidationError('Недопустимая роль.')
         return value
 
     def validate_username(self, value):
@@ -70,10 +72,10 @@ class GenreSerializer(ModelSerializer):
         fields = ('name', 'slug')
 
 
-class TitleReadSerializer(serializers.ModelSerializer):
+class TitleReadSerializer(ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer(many=False)
-    rating = serializers.FloatField(read_only=True)
+    rating = IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -87,12 +89,26 @@ class TitlePostSerializer(ModelSerializer):
         queryset=Category.objects.all(), slug_field='slug'
     )
     genre = SlugRelatedField(
-        many=True, queryset=Genre.objects.all(), slug_field='slug'
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug',
+        required=True
     )
 
     class Meta:
         model = Title
         fields = '__all__'
+
+    def validate_year(self, value):
+        year = timezone.datetime.now().year
+        if value > year:
+            raise ValidationError(
+                VALIDATE_DATE_ERROR.format(year=year)
+            )
+        return value
+
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
 
 
 class ReviewSerializer(ModelSerializer):

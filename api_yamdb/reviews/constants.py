@@ -7,3 +7,4 @@ NOT_ALLOWED_USERNAMES = ('me',)
 
 MIN_REVIEW = 1
 MAX_REVIEW = 10
+VALIDATE_DATE_ERROR = 'Год выпуска не может быть больше {year}'

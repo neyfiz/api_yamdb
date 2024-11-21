@@ -76,30 +76,28 @@ class User(AbstractUser):
         return self.username
 
 
-class Category(models.Model):
-    name = models.CharField('Имя категории', max_length=MAX_LENGTH)
+class SlugCategoryGenreModel(models.Model):
+    name = models.CharField('Имя', max_length=MAX_LENGTH)
     slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
-        verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'
+        abstract = True
         ordering = ('name',)
 
     def __str__(self):
         return self.name
 
 
-class Genre(models.Model):
-    name = models.CharField('Имя жанра', max_length=MAX_LENGTH)
-    slug = models.SlugField('Слаг', max_length=MAX_LENGTH_SLUG, unique=True)
+class Category(SlugCategoryGenreModel):
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
+
+class Genre(SlugCategoryGenreModel):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('name',)
-
-    def __str__(self):
-        return self.name
 
 
 class Title(models.Model):
@@ -157,7 +155,6 @@ class GenreTitle(models.Model):
         return f'{self.genre.name} {self.title.name}'
 
 
-<<<<<<< HEAD
 class Review(models.Model):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews'
@@ -184,10 +181,10 @@ class Comment(models.Model):
         User, on_delete=models.CASCADE, related_name='comments')
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, related_name='comments')
-=======
+
+
 class ReviewCommentBase(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
->>>>>>> develop
     text = models.TextField()
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True

@@ -3,6 +3,7 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+from http import HTTPStatus
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
@@ -11,18 +12,16 @@ from rest_framework.mixins import (
 )
 from rest_framework.permissions import (
     AllowAny,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
+    IsAuthenticated
 )
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import User, Category, Genre, Review, Title
+from .filters import TitleFilter
 from .permissions import (
     IsAdminOrAuthenticated,
     IsAuthorOrReadOnly,
@@ -38,6 +37,7 @@ from .serializers import (
     TitleReadSerializer,
     TitlePostSerializer,
 )
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class UserViewSet(ModelViewSet):
@@ -48,8 +48,6 @@ class UserViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        print(f'Action: {self.action}')
-
         if self.action in ['signup', 'token']:
             return [AllowAny()]
 
@@ -65,7 +63,8 @@ class UserViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        return Response({'detail: Метод PUT не разрешён.'}, status=HTTPStatus.METHOD_NOT_ALLOWED)
+        return Response({'detail: Метод PUT не разрешён.'},
+                        status=HTTPStatus.METHOD_NOT_ALLOWED)
 
     def destroy(self, request, *args, **kwargs):
         username = kwargs.get('pk')
@@ -89,8 +88,6 @@ class UserViewSet(ModelViewSet):
 
         username = request.data.get('username')
         email = request.data.get('email')
-
-        print(f'{username}')
 
         if username == 'me':
             return Response(
@@ -139,9 +136,6 @@ class UserViewSet(ModelViewSet):
                 fail_silently=False,
             )
             request.session['confirmation_code'] = confirmation_code
-
-            print(f'Сохранённый код для нового пользователя: {username} - '
-                  f'{confirmation_code}')
 
             return Response(response_data, status=HTTPStatus.OK)
 
@@ -206,7 +200,6 @@ class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
-    permission_classes = (IsAuthorOrReadOnly,)
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -220,12 +213,11 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    permission_classes = [IsAdminOnly]
+    permission_classes = (IsAdminOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')
     ).order_by('name')
-    permission_classes = (IsAdminOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     pagination_class = PageNumberPagination
