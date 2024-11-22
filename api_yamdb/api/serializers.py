@@ -182,6 +182,9 @@ class TitlePostSerializer(ModelSerializer):
             )
         return value
 
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
+
 
 class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(slug_field='username', read_only=True)

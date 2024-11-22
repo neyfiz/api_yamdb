@@ -179,9 +179,6 @@ class TitleViewSet(ModelViewSet):
             return TitleReadSerializer
         return TitlePostSerializer
 
-    def to_representation(self, value):
-        return TitleReadSerializer(value).data
-
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
