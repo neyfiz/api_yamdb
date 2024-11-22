@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -15,7 +16,8 @@ from rest_framework.mixins import (
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny,
-    IsAuthenticated
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -182,7 +184,8 @@ class TitleViewSet(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly)
     pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -201,7 +204,8 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly)
     pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete']
 

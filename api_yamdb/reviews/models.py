@@ -183,9 +183,9 @@ class Review(ReviewCommentBase):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews'
     )
-    score = models.IntegerField('Оценка', blank=True, null=True)
+    score = models.PositiveSmallIntegerField('Оценка', blank=True, null=True)
 
-    class Meta:
+    class Meta(ReviewCommentBase.Meta):
         default_related_name = 'reviews'
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
@@ -203,7 +203,7 @@ class Review(ReviewCommentBase):
 class Comment(ReviewCommentBase):
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
 
-    class Meta:
+    class Meta(ReviewCommentBase.Meta):
         default_related_name = 'comments'
         ordering = ('-pub_date',)
         verbose_name = 'Комментарий'
