@@ -1,12 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    NOT_ALLOWED_USERNAMES
+    NOT_ALLOWED_USERNAMES,
+    VALIDATE_DATE_ERROR
 )
 
 ROLE_USER = 'user'
@@ -130,6 +132,14 @@ class Title(models.Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('name', 'year')
+
+    def save(self, *args, **kwargs):
+        year = timezone.now().year
+        if self.year > year:
+            raise ValidationError(
+                VALIDATE_DATE_ERROR.format(year)
+            )
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
