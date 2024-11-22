@@ -168,6 +168,7 @@ class TitlePostSerializer(ModelSerializer):
         slug_field='slug',
         required=True
     )
+    year = IntegerField()
 
     class Meta:
         model = Title
@@ -180,6 +181,9 @@ class TitlePostSerializer(ModelSerializer):
                 VALIDATE_DATE_ERROR.format(year=year)
             )
         return value
+
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
 
 
 class ReviewSerializer(ModelSerializer):
