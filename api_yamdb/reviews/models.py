@@ -91,13 +91,13 @@ class SlugCategoryGenreModel(models.Model):
 
 
 class Category(SlugCategoryGenreModel):
-    class Meta:
+    class Meta(SlugCategoryGenreModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
 class Genre(SlugCategoryGenreModel):
-    class Meta:
+    class Meta(SlugCategoryGenreModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
