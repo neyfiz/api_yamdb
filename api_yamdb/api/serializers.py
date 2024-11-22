@@ -168,6 +168,7 @@ class TitlePostSerializer(ModelSerializer):
         slug_field='slug',
         required=True
     )
+    year = IntegerField()
 
     class Meta:
         model = Title
