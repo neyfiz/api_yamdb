@@ -151,7 +151,6 @@ class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
     lookup_field = 'slug'
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
-    pagination_class = PageNumberPagination
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
