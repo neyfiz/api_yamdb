@@ -3,6 +3,7 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
+from rest_framework.generics import get_object_or_404
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import IntegerField, ModelSerializer
 from rest_framework.validators import ValidationError
@@ -45,9 +46,13 @@ class UserSerializer(ModelSerializer):
         )
 
     def create(self, validated_data):
-        user, created = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             username=validated_data.get('username'),
-            defaults=validated_data
+            email=validated_data.get('email'),
+            role=validated_data.get('role', 'user'),
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            bio=validated_data.get('bio', ''),
         )
         return user
 
@@ -100,6 +105,7 @@ class UserSignupSerializer(serializers.ModelSerializer):
         )
         return user
 
+
     def validate_username(self, value):
         if value in NOT_ALLOWED_USERNAMES:
             raise serializers.ValidationError(
@@ -120,11 +126,7 @@ class TokenObtainSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = attrs.get('username')
         confirmation_code = attrs.get('confirmation_code')
-
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise NotFound({'username': 'Пользователь не найден.'})
+        user = get_object_or_404(User, username=username)
 
         if not default_token_generator.check_token(user, confirmation_code):
             raise serializers.ValidationError(

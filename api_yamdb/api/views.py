@@ -59,12 +59,8 @@ class UserViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_permissions(self):
-        print(f'Action: {self.action}')
 
-        if self.action in ['signup', 'token']:
-            return [AllowAny()]
-
-        elif self.action in ['list', 'retrieve',
+        if self.action in ['list', 'retrieve',
                              'destroy', 'partial_update']:
             return [IsAdminOrAuthenticated()]
         return super().get_permissions()
@@ -76,9 +72,9 @@ class UserViewSet(ModelViewSet):
         if request.method == 'PATCH':
             serializer = self.get_serializer(user, data=request.data,
                                              partial=True)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data, status=HTTPStatus.OK)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=HTTPStatus.OK)
 
         serializer = self.get_serializer(user)
         return Response(serializer.data)
@@ -131,11 +127,7 @@ class TokenObtainAPIView(APIView):
     def post(self, request):
         serializer = TokenObtainSerializer(data=request.data)
 
-        try:
-            serializer.is_valid(raise_exception=True)
-        except NotFound as e:
-            return Response(e.args[0], status=HTTPStatus.NOT_FOUND)
-
+        serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
 
