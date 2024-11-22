@@ -49,24 +49,13 @@ class User(AbstractUser):
         verbose_name='Права пользователя',
     )
 
-    @property
-    def is_admin(self):
-        """Проверяет, является ли пользователь администратором."""
-        return (
-            self.is_superuser
-            or self.is_staff
-            or self.role == UserRole.ADMIN)
-
-    @property
-    def is_moderator(self):
-        """Проверяет, является ли пользователь модератором."""
-        return self.role == UserRole.MODERATOR
-
     class Meta:
-        ordering = ('id',)
         verbose_name = 'Юзер'
         verbose_name_plural = 'Юзеры'
         ordering = ('role',)
+
+    def __str__(self):
+        return self.username
 
     def clean(self):
         super().clean()
@@ -74,8 +63,17 @@ class User(AbstractUser):
             raise ValidationError(
                 f'Имя пользователя не может быть {NOT_ALLOWED_USERNAMES}.')
 
-    def __str__(self):
-        return self.username
+    @property
+    def is_admin(self):
+        """Проверяет, является ли пользователь администратором."""
+        return (
+            self.is_staff
+            or self.role == UserRole.ADMIN)
+
+    @property
+    def is_moderator(self):
+        """Проверяет, является ли пользователь модератором."""
+        return self.role == UserRole.MODERATOR
 
 
 class SlugCategoryGenreModel(models.Model):
