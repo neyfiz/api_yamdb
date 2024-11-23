@@ -1,11 +1,11 @@
 from http import HTTPStatus
+
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
@@ -15,7 +15,8 @@ from rest_framework.mixins import (
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny,
-    IsAuthenticated
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -59,13 +60,8 @@ class UserViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_permissions(self):
-        print(f'Action: {self.action}')
 
-        if self.action in ['signup', 'token']:
-            return [AllowAny()]
-
-        elif self.action in ['list', 'retrieve',
-                             'destroy', 'partial_update']:
+        if self.action in ['list', 'retrieve', 'destroy', 'partial_update']:
             return [IsAdminOrAuthenticated()]
         return super().get_permissions()
 
@@ -76,9 +72,9 @@ class UserViewSet(ModelViewSet):
         if request.method == 'PATCH':
             serializer = self.get_serializer(user, data=request.data,
                                              partial=True)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data, status=HTTPStatus.OK)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=HTTPStatus.OK)
 
         serializer = self.get_serializer(user)
         return Response(serializer.data)
@@ -88,24 +84,6 @@ class SignupAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-
-        user = User.objects.filter(username=username).first()
-
-        if user:
-            if user.email == email:
-                return Response(
-                    {'username': user.username, 'email': user.email},
-                    status=HTTPStatus.OK
-                )
-            return Response(
-                {'email': (
-                    'Email не совпадает с уже зарегистрированным'
-                    'пользователем.')},
-                status=HTTPStatus.BAD_REQUEST
-            )
-
         serializer = UserSignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -115,7 +93,7 @@ class SignupAPIView(APIView):
             subject='Код подтверждения',
             message=f'Ваш код подтверждения: {confirmation_code}',
             from_email=RESPONSE_EMAIL,
-            recipient_list=[email],
+            recipient_list=[user.email],
             fail_silently=False,
         )
 
@@ -131,11 +109,7 @@ class TokenObtainAPIView(APIView):
     def post(self, request):
         serializer = TokenObtainSerializer(data=request.data)
 
-        try:
-            serializer.is_valid(raise_exception=True)
-        except NotFound as e:
-            return Response(e.args[0], status=HTTPStatus.NOT_FOUND)
-
+        serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
 
@@ -151,7 +125,6 @@ class CreateListDestroyViewSet(CreateModelMixin, DestroyModelMixin,
     lookup_field = 'slug'
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
-    pagination_class = PageNumberPagination
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -179,13 +152,11 @@ class TitleViewSet(ModelViewSet):
             return TitleReadSerializer
         return TitlePostSerializer
 
-    def to_representation(self, value):
-        return TitleReadSerializer(value).data
-
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly)
     pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -204,7 +175,8 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly)
     pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete']
 

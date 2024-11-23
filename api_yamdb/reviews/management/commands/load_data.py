@@ -1,6 +1,6 @@
 import csv
-from django.core.management.base import BaseCommand
 
+from django.core.management.base import BaseCommand
 from reviews.models import (
     Category,
     Comment,
@@ -13,6 +13,8 @@ from reviews.models import (
 
 
 class Command(BaseCommand):
+    DATA_DIR = 'static/data/'
+
     def handle(self, *args, **options):
         models = [
             (User, 'users.csv', {
@@ -66,7 +68,8 @@ class Command(BaseCommand):
             self.import_data(model, filename, fields)
 
     def import_data(self, model, filename, fields):
-        with open(f'static/data/{filename}', 'r', encoding='utf-8') as csvfile:
+        file_path = f'{self.DATA_DIR}{filename}'
+        with open(file_path, 'r', encoding='utf-8') as csvfile:
             dict_reader = csv.DictReader(csvfile)
             for row in dict_reader:
                 obj, created = model.objects.get_or_create(

@@ -1,5 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, EmailValidator
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
@@ -45,7 +45,7 @@ class UserSerializer(ModelSerializer):
         )
 
     def create(self, validated_data):
-        user, created = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             username=validated_data.get('username'),
             defaults=validated_data
         )
@@ -79,38 +79,56 @@ class UserSerializer(ModelSerializer):
 
 class UserSignupSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        max_length=MAX_LENGTH_ROLE,
+        max_length=150,
         validators=[
             RegexValidator(
-                regex=USERNAME_SEARCH_REGEX,
-                message='Имя пользователя может содержать только буквы,'
+                regex=r'^[\w.@+-]+$',
+                message='Имя пользователя может содержать только буквы, '
                         'цифры и символы: @/./+/-/_'
             )
         ]
+    )
+    email = serializers.EmailField(
+        max_length=254,
+        validators=[EmailValidator(message='Некорректный email-адрес.')]
     )
 
     class Meta:
         model = User
         fields = ('username', 'email')
 
-    def create(self, validated_data):
-        user, created = User.objects.get_or_create(
-            username=validated_data.get('username'),
-            defaults=validated_data
-        )
-        return user
-
     def validate_username(self, value):
         if value in NOT_ALLOWED_USERNAMES:
             raise serializers.ValidationError(
-                "Этот никнейм нельзя использовать.")
+                f"Имя пользователя '{value}' недопустимо."
+            )
         return value
 
-    def validate_email(self, value):
-        if not self.instance and User.objects.filter(email=value).exists():
+    def validate(self, attrs):
+        username = attrs.get('username')
+        email = attrs.get('email')
+
+        user = User.objects.filter(username=username).first()
+
+        if user:
+            if user.email != email:
+                raise serializers.ValidationError(
+                    {'email': 'Email не совпадает с уже зарегистрированным'
+                              'пользователем.'}
+                )
+        elif User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
-                "Пользователь с данным email уже существует.")
-        return value
+                {'email': 'Пользователь с данным email уже существует.'}
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        user, _ = User.objects.get_or_create(
+            username=validated_data['username'],
+            defaults={'email': validated_data['email']}
+        )
+        return user
 
 
 class TokenObtainSerializer(serializers.Serializer):
@@ -168,6 +186,7 @@ class TitlePostSerializer(ModelSerializer):
         slug_field='slug',
         required=True
     )
+    year = IntegerField()
 
     class Meta:
         model = Title
@@ -180,6 +199,9 @@ class TitlePostSerializer(ModelSerializer):
                 VALIDATE_DATE_ERROR.format(year=year)
             )
         return value
+
+    def to_representation(self, value):
+        return TitleReadSerializer(value).data
 
 
 class ReviewSerializer(ModelSerializer):

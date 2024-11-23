@@ -1,12 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from .constants import (
     MAX_LENGTH,
     MAX_LENGTH_EMAIL,
     MAX_LENGTH_ROLE,
-    NOT_ALLOWED_USERNAMES
+    NOT_ALLOWED_USERNAMES,
+    VALIDATE_DATE_ERROR
 )
 
 ROLE_USER = 'user'
@@ -47,24 +49,13 @@ class User(AbstractUser):
         verbose_name='Права пользователя',
     )
 
-    @property
-    def is_admin(self):
-        """Проверяет, является ли пользователь администратором."""
-        return (
-            self.is_superuser
-            or self.is_staff
-            or self.role == UserRole.ADMIN)
-
-    @property
-    def is_moderator(self):
-        """Проверяет, является ли пользователь модератором."""
-        return self.role == UserRole.MODERATOR
-
     class Meta:
-        ordering = ('id',)
         verbose_name = 'Юзер'
         verbose_name_plural = 'Юзеры'
         ordering = ('role',)
+
+    def __str__(self):
+        return self.username
 
     def clean(self):
         super().clean()
@@ -72,8 +63,17 @@ class User(AbstractUser):
             raise ValidationError(
                 f'Имя пользователя не может быть {NOT_ALLOWED_USERNAMES}.')
 
-    def __str__(self):
-        return self.username
+    @property
+    def is_admin(self):
+        """Проверяет, является ли пользователь администратором."""
+        return (
+            self.is_staff
+            or self.role == UserRole.ADMIN)
+
+    @property
+    def is_moderator(self):
+        """Проверяет, является ли пользователь модератором."""
+        return self.role == UserRole.MODERATOR
 
 
 class SlugCategoryGenreModel(models.Model):
@@ -89,13 +89,13 @@ class SlugCategoryGenreModel(models.Model):
 
 
 class Category(SlugCategoryGenreModel):
-    class Meta:
+    class Meta(SlugCategoryGenreModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
 class Genre(SlugCategoryGenreModel):
-    class Meta:
+    class Meta(SlugCategoryGenreModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -130,6 +130,14 @@ class Title(models.Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('name', 'year')
+
+    def save(self, *args, **kwargs):
+        year = timezone.now().year
+        if self.year > year:
+            raise ValidationError(
+                VALIDATE_DATE_ERROR.format(year)
+            )
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -173,9 +181,9 @@ class Review(ReviewCommentBase):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews'
     )
-    score = models.IntegerField('Оценка', blank=True, null=True)
+    score = models.PositiveSmallIntegerField('Оценка', blank=True, null=True)
 
-    class Meta:
+    class Meta(ReviewCommentBase.Meta):
         default_related_name = 'reviews'
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
@@ -193,7 +201,7 @@ class Review(ReviewCommentBase):
 class Comment(ReviewCommentBase):
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
 
-    class Meta:
+    class Meta(ReviewCommentBase.Meta):
         default_related_name = 'comments'
         ordering = ('-pub_date',)
         verbose_name = 'Комментарий'
