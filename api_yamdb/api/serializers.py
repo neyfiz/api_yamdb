@@ -1,9 +1,8 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, EmailValidator
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import get_object_or_404
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import IntegerField, ModelSerializer
 from rest_framework.validators import ValidationError
@@ -48,11 +47,7 @@ class UserSerializer(ModelSerializer):
     def create(self, validated_data):
         user, _ = User.objects.get_or_create(
             username=validated_data.get('username'),
-            email=validated_data.get('email'),
-            role=validated_data.get('role', 'user'),
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
-            bio=validated_data.get('bio', ''),
+            defaults=validated_data
         )
         return user
 
@@ -84,39 +79,56 @@ class UserSerializer(ModelSerializer):
 
 class UserSignupSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        max_length=MAX_LENGTH_ROLE,
+        max_length=150,
         validators=[
             RegexValidator(
-                regex=USERNAME_SEARCH_REGEX,
-                message='Имя пользователя может содержать только буквы,'
+                regex=r'^[\w.@+-]+$',
+                message='Имя пользователя может содержать только буквы, '
                         'цифры и символы: @/./+/-/_'
             )
         ]
+    )
+    email = serializers.EmailField(
+        max_length=254,
+        validators=[EmailValidator(message='Некорректный email-адрес.')]
     )
 
     class Meta:
         model = User
         fields = ('username', 'email')
 
-    def create(self, validated_data):
-        user, created = User.objects.get_or_create(
-            username=validated_data.get('username'),
-            defaults=validated_data
-        )
-        return user
-
-
     def validate_username(self, value):
         if value in NOT_ALLOWED_USERNAMES:
             raise serializers.ValidationError(
-                "Этот никнейм нельзя использовать.")
+                f"Имя пользователя '{value}' недопустимо."
+            )
         return value
 
-    def validate_email(self, value):
-        if not self.instance and User.objects.filter(email=value).exists():
+    def validate(self, attrs):
+        username = attrs.get('username')
+        email = attrs.get('email')
+
+        user = User.objects.filter(username=username).first()
+
+        if user:
+            if user.email != email:
+                raise serializers.ValidationError(
+                    {'email': 'Email не совпадает с уже зарегистрированным'
+                              'пользователем.'}
+                )
+        elif User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
-                "Пользователь с данным email уже существует.")
-        return value
+                {'email': 'Пользователь с данным email уже существует.'}
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        user, _ = User.objects.get_or_create(
+            username=validated_data['username'],
+            defaults={'email': validated_data['email']}
+        )
+        return user
 
 
 class TokenObtainSerializer(serializers.Serializer):
@@ -126,7 +138,11 @@ class TokenObtainSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = attrs.get('username')
         confirmation_code = attrs.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise NotFound({'username': 'Пользователь не найден.'})
 
         if not default_token_generator.check_token(user, confirmation_code):
             raise serializers.ValidationError(
