@@ -9,39 +9,44 @@
 - **Django REST Framework** — 3.12.4
 - **SQLite** — (по умолчанию)
 
-## Установка
+## Установка 
 
-1. Клонировать репозиторий:
+1. Клонировать репозиторий: 
 
-    ```bash
-    git clone git@github.com:neyfiz/api_yamdb.git
-    cd api_yamdb
+    ```bash 
+    git clone git@github.com:neyfiz/api_yamdb.git 
+    cd api_yamdb 
     ```
 
-2. Создать виртуальное окружение:
+2. Создать виртуальное окружение: 
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
+    ```bash 
+    python -m venv venv 
+    source venv/bin/activate 
     ```
 
-3. Установить зависимости:
+3. Установить зависимости: 
 
-    ```bash
-    pip install -r requirements.txt
+    ```bash 
+    pip install -r requirements.txt 
     ```
 
-4. Выполнить миграции:
+4. Выполнить миграции: 
 
-    ```bash
-    python manage.py migrate
+    ```bash 
+    python manage.py migrate 
     ```
 
-5. Запустить сервер:
+5. Наполнить базу данных тестовыми данными: 
 
     ```bash
-    python manage.py runserver
+    python manage.py load_data
     ```
+
+6. Запустить сервер: 
+
+    ```bash 
+    python manage.py runserver 
 
 ## Использование API
 
@@ -179,7 +184,6 @@
 
 ## Роли пользователей
 
-- **Аноним** — чтение произведений и отзывов.
 - **Пользователь** — создание отзывов и комментариев.
 - **Модератор** — редактирование и удаление отзывов и комментариев.
 - **Админ** — полные права.

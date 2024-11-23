@@ -6,7 +6,6 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin,
@@ -62,8 +61,7 @@ class UserViewSet(ModelViewSet):
 
     def get_permissions(self):
 
-        if self.action in ['list', 'retrieve',
-                             'destroy', 'partial_update']:
+        if self.action in ['list', 'retrieve', 'destroy', 'partial_update']:
             return [IsAdminOrAuthenticated()]
         return super().get_permissions()
 
@@ -86,24 +84,6 @@ class SignupAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-
-        user = User.objects.filter(username=username).first()
-
-        if user:
-            if user.email == email:
-                return Response(
-                    {'username': user.username, 'email': user.email},
-                    status=HTTPStatus.OK
-                )
-            return Response(
-                {'email': (
-                    'Email не совпадает с уже зарегистрированным'
-                    'пользователем.')},
-                status=HTTPStatus.BAD_REQUEST
-            )
-
         serializer = UserSignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -113,7 +93,7 @@ class SignupAPIView(APIView):
             subject='Код подтверждения',
             message=f'Ваш код подтверждения: {confirmation_code}',
             from_email=RESPONSE_EMAIL,
-            recipient_list=[email],
+            recipient_list=[user.email],
             fail_silently=False,
         )
 
