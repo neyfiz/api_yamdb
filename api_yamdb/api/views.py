@@ -27,7 +27,7 @@ from .filters import TitleFilter
 from .permissions import (
     IsAdminModeratorAuthorOrReadOnly,
     IsAdminUserOnly,
-    IsAdminOrAuthenticated
+    IsAdminAndAuthenticated
 )
 from .serializers import (
     CategorySerializer,
@@ -62,7 +62,7 @@ class UserViewSet(ModelViewSet):
     def get_permissions(self):
 
         if self.action in ['list', 'retrieve', 'destroy', 'partial_update']:
-            return [IsAdminOrAuthenticated()]
+            return [IsAdminAndAuthenticated()]
         return super().get_permissions()
 
     @action(detail=False, methods=['get', 'patch'], url_path='me')

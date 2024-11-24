@@ -1,8 +1,8 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.validators import RegexValidator, EmailValidator
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 from rest_framework.relations import SlugRelatedField
 from rest_framework.serializers import IntegerField, ModelSerializer
 from rest_framework.validators import ValidationError
@@ -11,6 +11,7 @@ from reviews.constants import (
     MAX_LENGTH_ROLE,
     MAX_REVIEW,
     MIN_REVIEW,
+    MAX_LENGTH_EMAIL,
     NOT_ALLOWED_USERNAMES,
     USERNAME_SEARCH_REGEX,
     VALIDATE_DATE_ERROR
@@ -79,17 +80,17 @@ class UserSerializer(ModelSerializer):
 
 class UserSignupSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        max_length=150,
+        max_length=MAX_LENGTH_ROLE,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+$',
+                regex=USERNAME_SEARCH_REGEX,
                 message='Имя пользователя может содержать только буквы, '
                         'цифры и символы: @/./+/-/_'
             )
         ]
     )
     email = serializers.EmailField(
-        max_length=254,
+        max_length=MAX_LENGTH_EMAIL,
         validators=[EmailValidator(message='Некорректный email-адрес.')]
     )
 
@@ -138,11 +139,7 @@ class TokenObtainSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = attrs.get('username')
         confirmation_code = attrs.get('confirmation_code')
-
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise NotFound({'username': 'Пользователь не найден.'})
+        user = get_object_or_404(User, username=username)
 
         if not default_token_generator.check_token(user, confirmation_code):
             raise serializers.ValidationError(
