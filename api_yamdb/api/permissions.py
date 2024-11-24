@@ -1,7 +1,7 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
-class IsAdminOrAuthenticated(BasePermission):
+class IsAdminAndAuthenticated(BasePermission):
     """Разрешение для администраторов и аутентифицированных пользователей."""
 
     def has_permission(self, request, view):
