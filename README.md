@@ -1,6 +1,6 @@
 # API YaMDb
 
-The **YaMDb** project collects user reviews of various works: films, books, music and others. Users can leave text reviews, ratings and comments.
+Проект **YaMDb** собирает отзывы пользователей на различные произведения: фильмы, книги, музыку и другие. Пользователи могут оставлять текстовые отзывы, оценки и комментарии.
 
 ## Используемые технологии
 
